@@ -282,6 +282,28 @@ input[type=text]{width:100%;border:1px solid var(--line);border-radius:12px;padd
 .cbar{display:flex;height:14px;border-radius:7px;overflow:hidden;border:1px solid var(--line);margin-top:8px}
 .cbar span{display:block;min-width:4px}
 .ctext{font-size:12px;color:var(--sub);margin-top:5px;line-height:1.6}
+/* ---- ホームの縦並びおすすめ ---- */
+.today{display:flex;justify-content:space-between;align-items:flex-end;margin:6px 2px 10px}
+.td-date b{font-size:46px;font-weight:200;line-height:1;display:block;letter-spacing:-.02em}
+.td-date span{font-size:12px;color:var(--sub)}
+.td-wx{display:flex;align-items:flex-end;gap:12px;position:relative;padding-top:20px}
+.td-wx .e{font-size:28px;line-height:1.1}
+.td-wx .t{font-size:30px;font-weight:300;line-height:1}
+.td-wx .t small{display:block;font-size:10px;color:var(--sub);margin-bottom:2px}
+.td-loc{position:absolute;right:0;top:0;font-size:12px;color:var(--sub)}
+.advice{background:#fff;border:1px solid var(--line);border-radius:12px;padding:10px 14px;font-size:13px;line-height:1.6;color:#4a463f}
+.fcard{overflow:hidden;margin-bottom:12px;display:flex;align-items:stretch}
+.fpic{display:block;width:56%;flex:none;border:0;padding:0;background:none}
+.fside{flex:1;min-width:0;display:flex;flex-direction:column}
+.facts{margin-top:auto}
+.facts .mini{width:100%;justify-content:center}
+.flatlay{position:relative;aspect-ratio:4/5;background:#f3f0ea}
+.flatlay img{position:absolute;object-fit:contain;mix-blend-mode:multiply;border-radius:6px}
+.fcap{padding:12px 12px 2px}
+.fcap b{font-size:14px;line-height:1.45;display:block}
+.fcap p{margin:4px 0 0;font-size:12px;color:#5f5a51;line-height:1.6}
+.facts{display:flex;flex-direction:column;gap:6px;padding:10px 12px 12px}
+.mini.on svg.i{fill:var(--red);stroke:var(--red)}
 </style>
 </head>
 <body>
@@ -665,32 +687,77 @@ function describe(ids,ctx={}){
 const sameIds=(a,b)=>a.length===b.length&&[...a].sort().join()===[...b].sort().join();
 const savedOf=o=>outfits.find(x=>sameIds(x.ids,o.ids));
 
-// ================= ホーム =================
-let heroOutfit=null;
+// ================= ホーム(今日の天気とおすすめを縦に並べる) =================
+let heroOutfit=null, homeFeed=[];
+// 平置き風のコーデの絵:服を机に並べたように配置する(位置は枠に対する%)
+const FL_OUT={tops:[2,2,46,40],bottoms:[6,41,38,55],outer:[50,4,48,50],shoes:[50,76,26,21],bag:[76,58,22,36]};
+const FL_NO ={tops:[3,3,46,42],bottoms:[8,44,36,53],bag:[52,10,44,42],shoes:[54,62,40,30]};
+function flatlay(ids){
+  const list=ids.map(byId).filter(Boolean), by={};
+  list.forEach(i=>{ if(!by[i.cat]) by[i.cat]=i; });
+  const L=by.outer?FL_OUT:FL_NO;
+  return `<div class="flatlay">${Object.entries(L).filter(([c])=>by[c]).map(([c,[l,t,w,h]])=>
+    `<img src="${by[c].photo}" alt="${esc(by[c].sub||catName(c))}" style="left:${l}%;top:${t}%;width:${w}%;height:${h}%">`).join('')}</div>`;
+}
+// 気温と天気から、ひとことアドバイス
+function weatherAdvice(){
+  if(!weather) return '';
+  const t=weather.max, c=weather.code; let a;
+  if(t<10) a='コートやダウンで、しっかり暖かくしたい日';
+  else if(t<17) a='ニット＋薄手のアウターがちょうど良さそう';
+  else if(t<22) a='長袖1枚か、軽い羽織りがあると安心';
+  else if(t<27) a='半袖でも過ごしやすい陽気';
+  else a='とても暑い日。風通しのいい服で';
+  if(weather.max-weather.min>=10) a+='。朝晩は冷えるので、脱ぎ着しやすい服を';
+  if((c>=51&&c<=67)||(c>=80&&c<=82)||c>=95) a+='。雨なので、濡れても平気な靴がおすすめ';
+  else if(c>=71&&c<=77) a+='。雪の予報なので足もとに注意';
+  return a+'！';
+}
+function feedCard(o,key,isToday){
+  const saved=!!savedOf(o);
+  return `<div class="card fcard">
+    <button class="fpic" data-open="${key}" type="button">${flatlay(o.ids)}</button>
+    <div class="fside"><div class="fcap"><b>${esc(o.title)}</b><p>${esc(o.note)}</p></div>
+    ${isToday?`<div class="facts"><button class="mini" data-open="${key}" type="button">詳しく見る ${ic('chev')}</button></div>`:`<div class="facts"><button class="mini ${saved?'on':''}" data-save="${key}" type="button">${ic('heart')} ${saved?'保存済み':'保存'}</button><button class="mini" data-wear="${key}" type="button">${ic('check')} 今日これを着る</button></div>`}</div>
+  </div>`;
+}
 async function renderHome(){
   const v=$('v-home');
   const todayW=wears.find(w=>w.date===todayKey());
-  if(todayW) heroOutfit={...describe(todayW.ids,{}),...pickFields(todayW)};
-  else if(!heroOutfit||!heroOutfit.ids.every(byId)){
-    const r=suggestOutfits({season:currentSeason(),style:'all',dest:'おまかせ',temp:weather?.max??null},1);
-    heroOutfit=r.outfits?.[0]||null;
+  if(!heroOutfit||!homeFeed.every(o=>o.ids.every(byId))){
+    const r=suggestOutfits({season:currentSeason(),style:'all',dest:'おまかせ',temp:weather?.max??null},5);
+    homeFeed=r.outfits||[]; heroOutfit=homeFeed[0]||{ids:[]};
   }
-  const recent=[];
-  const seen=new Set();
+  const todayO=todayW?{...describe(todayW.ids,{}),...pickFields(todayW)}:null;
+  const now=new Date(), wx=weather?WX(weather.code):null, advice=weatherAdvice();
+  const recent=[], seen=new Set();
   for(const w of wears){ const k=[...w.ids].sort().join(); if(seen.has(k)) continue; seen.add(k); recent.push({...describe(w.ids),...pickFields(w),date:w.date}); if(recent.length>=8) break; }
   for(const o of outfits){ const k=[...o.ids].sort().join(); if(seen.has(k)) continue; seen.add(k); recent.push(o); if(recent.length>=8) break; }
-  const wxTxt = weather ? `${WX(weather.code)[0]} ${weather.max}℃ / ${weather.min}℃` : '';
+  const getO=k=>k==='today'?todayO:homeFeed[+k];
+  let feedHTML;
+  if(homeFeed.length){
+    feedHTML=`<div class="sec-head"><h2>${todayO?'ほかのおすすめ':'今日のおすすめ'}</h2><button data-go="stylist" type="button">スワイプで選ぶ ${ic('chev')}</button></div>
+      ${homeFeed.map((o,i)=>feedCard(o,i,false)).join('')}
+      <button class="btn light" id="h-more" type="button">${ic('refresh')} 別の組み合わせを見る</button>`;
+  } else if(items.length){
+    feedHTML=`<div class="card empty" style="margin-top:14px">${currentSeason()}に着られるトップスとパンツがそろうと、ここにおすすめが並びます。<div style="height:14px"></div><button class="btn" id="h-first" type="button">${ic('plus')} アイテムを登録する</button></div>`;
+  } else {
+    feedHTML=`<div class="card" style="padding:26px 20px;text-align:center;margin-top:14px"><div class="serif" style="font-size:22px;margin-bottom:6px">Welcome</div>
+      <p class="note" style="margin:0 0 16px">まずは手持ちの服を写真で登録しましょう。<br>トップスとパンツが揃うと、コーデの提案が始まります。</p>
+      <button class="btn" id="h-first" type="button">${ic('plus')} アイテムを登録する</button></div>`;
+  }
   v.innerHTML=`
     <div class="brand"><div><b class="serif">My Wardrobe</b><small>Style Your Life</small></div>
       <button class="icon-btn" id="h-add" aria-label="アイテムを登録">${ic('plus')}</button></div>
     ${seasonBanner()}
-    ${heroOutfit? `<button class="hero" id="h-hero" type="button">${collage(heroOutfit.ids)}<div class="shade"></div>
-        ${wxTxt?`<span class="wx">${esc(prefs.loc.name)} ${wxTxt}</span>`:''}
-        <div class="txt"><div class="k">${todayW?'TODAY':'RECOMMENDED'}</div><h3>${todayW?'今日のコーディネート':'今日のおすすめ<br>コーディネート'}</h3>
-        <p>${esc(heroOutfit.title)}</p><span class="pill">このコーデを見る ${ic('chev')}</span></div></button>`
-      : `<div class="card" style="padding:26px 20px;text-align:center"><div class="serif" style="font-size:22px;margin-bottom:6px">Welcome</div>
-        <p class="note" style="margin:0 0 16px">まずは手持ちの服を写真で登録しましょう。<br>トップスとパンツが揃うと、コーデの提案が始まります。</p>
-        <button class="btn" id="h-first" type="button">${ic('plus')} アイテムを登録する</button></div>`}
+    <div class="today">
+      <div class="td-date"><b>${now.getDate()}</b><span>${now.getMonth()+1}月・${WD[now.getDay()]}曜日</span></div>
+      <div class="td-wx"><div class="td-loc">${esc(prefs.loc.name)}</div>
+        ${wx?`<span class="e">${wx[0]}</span><span class="t"><small>最高</small>${weather.max}°</span><span class="t"><small>最低</small>${weather.min}°</span>`:'<small class="note">天気を読み込み中…</small>'}</div>
+    </div>
+    ${advice?`<div class="advice">${advice}</div>`:''}
+    ${todayO?`<div class="sec-head"><h2>今日のコーディネート</h2></div>${feedCard(todayO,'today',true)}`:''}
+    ${feedHTML}
     <div class="sec-head"><h2>クイックメニュー</h2></div>
     <div class="quick">
       <button data-go="closet">${ic('hanger')}クローゼット</button>
@@ -698,17 +765,23 @@ async function renderHome(){
       <button data-go="stylist">${ic('sparkle')}スタイリスト</button>
       <button data-go="calendar">${ic('calendar')}カレンダー</button>
     </div>
-    <div class="sec-head"><h2>最近のコーディネート</h2>${recent.length?`<button data-go="saved">すべて見る ${ic('chev')}</button>`:''}</div>
-    ${recent.length?`<div class="hscroll" id="h-recent">${recent.map((o,i)=>`<button class="thumb-outfit" data-i="${i}">${collage(o.ids)}${o.date?`<span class="d">${o.date.slice(5).replace('-','/')}</span>`:''}</button>`).join('')}</div>`
-      :`<p class="note">着たコーデや保存したコーデがここに並びます。</p>`}
+    ${recent.length?`<div class="sec-head"><h2>最近のコーディネート</h2><button data-go="saved" type="button">すべて見る ${ic('chev')}</button></div>
+      <div class="hscroll" id="h-recent">${recent.map((o,i)=>`<button class="thumb-outfit" data-i="${i}">${collage(o.ids)}${o.date?`<span class="d">${o.date.slice(5).replace('-','/')}</span>`:''}</button>`).join('')}</div>`:''}
   `;
   v.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>go(b.dataset.go));
   $('h-add').onclick=()=>openEditor();
   bindSeasonBanner();
   if($('h-first')) $('h-first').onclick=()=>openEditor();
-  if($('h-hero')) $('h-hero').onclick=()=>openDetail(heroOutfit);
+  if($('h-more')) $('h-more').onclick=()=>{ heroOutfit=null; renderHome(); window.scrollTo({top:$('v-home').querySelector('.advice, .today').offsetTop,behavior:'smooth'}); };
+  v.querySelectorAll('[data-open]').forEach(b=>b.onclick=()=>openDetail(getO(b.dataset.open)));
+  v.querySelectorAll('[data-save]').forEach(b=>b.onclick=async()=>{ await toggleSave(getO(b.dataset.save)); renderHome(); });
+  v.querySelectorAll('[data-wear]').forEach(b=>b.onclick=async()=>{
+    const o=getO(b.dataset.wear);
+    await put('wears',{id:uid(),date:todayKey(),ids:[...o.ids],title:o.title,note:o.note,tags:o.tags,created:Date.now()});
+    await load(); toast('今日のコーデとしてカレンダーに記録しました'); renderHome(); window.scrollTo({top:0,behavior:'smooth'});
+  });
   v.querySelectorAll('#h-recent button').forEach(b=>b.onclick=()=>openDetail(recent[+b.dataset.i]));
-  if(!weather&&!weatherLoading) loadWeather().then(w=>{ if(w&&stack[stack.length-1]==='home'){ if(!todayW) heroOutfit=null; renderHome(); } });
+  if(!weather&&!weatherLoading) loadWeather().then(w=>{ if(w&&stack[stack.length-1]==='home'){ heroOutfit=null; renderHome(); } });
 }
 function pickFields(w){ return w.title?{title:w.title,note:w.note,tags:w.tags}:{}; }
 
