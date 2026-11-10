@@ -1,0 +1,1052 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f7f5f1">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="My Wardrobe">
+<title>My Wardrobe</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;1,500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f7f5f1; --card:#ffffff; --ink:#26241f; --sub:#8a857b; --line:#ebe7df;
+  --dark:#2f2d29; --chip:#f1eee8; --tile:#efebe4; --red:#c4473a; --accent:#b39b7c;
+  --shadow:0 2px 10px rgba(60,50,30,.06);
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Hiragino Kaku Gothic ProN","Yu Gothic UI","Meiryo",sans-serif;
+  -webkit-tap-highlight-color:transparent}
+button{font-family:inherit;color:inherit;cursor:pointer}
+.hidden{display:none!important}
+.serif{font-family:"Cormorant Garamond",Georgia,"Times New Roman",serif}
+svg.i{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;flex:none}
+
+/* ---- 画面の枠 ---- */
+.view{padding:0 16px 104px;min-height:100vh}
+.view.no-nav{padding-bottom:110px}
+.top{position:sticky;top:0;z-index:5;background:var(--bg);display:flex;align-items:center;gap:8px;
+  padding:14px 0 10px;padding-top:calc(14px + env(safe-area-inset-top))}
+.top h1{margin:0;font-size:21px;font-weight:700;letter-spacing:.03em;flex:1}
+.top.center h1{text-align:center;font-size:17px}
+.icon-btn{border:0;background:none;padding:6px;display:flex;border-radius:10px}
+.icon-btn:active{background:var(--chip)}
+
+nav.tabs{position:fixed;bottom:0;left:0;right:0;z-index:10;display:flex;background:rgba(255,255,255,.96);
+  border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom);backdrop-filter:blur(8px)}
+nav.tabs button{flex:1;border:0;background:none;color:#a5a094;padding:9px 0 9px;font-size:10px;
+  display:flex;flex-direction:column;align-items:center;gap:3px}
+nav.tabs button.on{color:var(--ink);font-weight:700}
+nav.tabs button.on svg.i{stroke-width:2.1}
+
+.chips{display:flex;gap:6px;overflow-x:auto;padding:2px 0 10px;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chips.wrap{flex-wrap:wrap}
+.chip{flex:none;border:0;background:var(--chip);border-radius:9px;padding:7px 13px;font-size:13px}
+.chip.on{background:var(--dark);color:#fff}
+
+.sec-head{display:flex;justify-content:space-between;align-items:baseline;margin:22px 0 10px}
+.sec-head h2{margin:0;font-size:16px;font-weight:700}
+.sec-head button{border:0;background:none;font-size:12px;color:var(--sub);display:flex;align-items:center}
+.sec-head button svg.i{width:14px;height:14px}
+
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;border:0;border-radius:999px;
+  padding:14px;font-size:15px;font-weight:700;background:var(--dark);color:#fff}
+.btn svg.i{width:18px;height:18px}
+.btn.light{background:#fff;color:var(--ink);border:1px solid var(--line)}
+.btn.danger{background:none;color:var(--red);border:1px solid #e3c2bc}
+.row{display:flex;gap:10px}.row>*{flex:1;white-space:nowrap}
+.card{background:var(--card);border-radius:16px;box-shadow:var(--shadow);border:1px solid var(--line)}
+.empty{text-align:center;color:var(--sub);padding:40px 16px;font-size:14px;line-height:1.8}
+
+/* ---- コーデの絵(服の写真を並べる) ---- */
+.collage{display:flex;gap:6px;padding:8px;background:linear-gradient(160deg,#f3f0ea,#e9e4da);height:100%}
+.collage .col{flex:1;display:flex;flex-direction:column;gap:6px;min-width:0}
+.collage .tile{border-radius:10px;overflow:hidden;background:var(--tile);min-height:0}
+.collage .tile img{width:100%;height:100%;object-fit:cover;display:block}
+
+/* ---- ホーム ---- */
+.brand{padding-top:calc(16px + env(safe-area-inset-top));display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px}
+.brand b{display:block;font-size:24px;line-height:1}
+.brand small{font-size:12px;color:var(--sub);letter-spacing:.05em}
+.hero{position:relative;height:400px;border-radius:20px;overflow:hidden;box-shadow:var(--shadow);border:0;padding:0;width:100%;text-align:left;display:block;background:var(--tile)}
+.hero .shade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(30,26,20,.0) 35%,rgba(30,26,20,.72) 100%)}
+.hero .txt{position:absolute;left:20px;right:20px;bottom:20px;color:#fff}
+.hero .txt .k{font-size:12px;letter-spacing:.08em;opacity:.85}
+.hero .txt h3{margin:4px 0 6px;font-size:24px;line-height:1.35;font-weight:700}
+.hero .txt p{margin:0 0 14px;font-size:13px;opacity:.9;line-height:1.6}
+.hero .pill{display:inline-flex;align-items:center;gap:4px;border:1px solid rgba(255,255,255,.8);border-radius:999px;padding:7px 14px;font-size:13px}
+.hero .pill svg.i{width:14px;height:14px}
+.hero .wx{position:absolute;top:14px;right:14px;background:rgba(255,255,255,.9);color:var(--ink);font-size:12px;border-radius:999px;padding:5px 10px}
+.quick{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.quick button{border:1px solid var(--line);background:#fff;border-radius:14px;padding:14px 0 10px;display:flex;flex-direction:column;align-items:center;gap:7px;font-size:11px;box-shadow:var(--shadow)}
+.quick button svg.i{width:28px;height:28px;stroke-width:1.5}
+.hscroll{display:flex;gap:10px;overflow-x:auto;margin:0 -16px;padding:0 16px 4px;scrollbar-width:none}
+.hscroll::-webkit-scrollbar{display:none}
+.thumb-outfit{flex:none;width:118px;height:150px;border-radius:12px;overflow:hidden;border:0;padding:0;box-shadow:var(--shadow);position:relative}
+.thumb-outfit .collage{padding:5px;gap:4px}.thumb-outfit .collage .col{gap:4px}.thumb-outfit .collage .tile{border-radius:6px}
+.thumb-outfit .d{position:absolute;left:5px;bottom:5px;background:rgba(0,0,0,.55);color:#fff;font-size:10px;border-radius:6px;padding:2px 6px}
+
+/* ---- クローゼット ---- */
+.search{display:flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:9px 12px;margin-bottom:10px}
+.search input{border:0;outline:0;flex:1;font-size:15px;background:none;font-family:inherit}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+@media (min-width:640px){.grid{grid-template-columns:repeat(5,1fr)}}
+.item{position:relative;aspect-ratio:3/4;border-radius:12px;overflow:hidden;background:var(--tile);border:0;padding:0}
+.item img{width:100%;height:100%;object-fit:cover;display:block}
+.item .fav{position:absolute;top:4px;right:4px;border:0;background:rgba(255,255,255,.75);border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;padding:0}
+.item .fav svg.i{width:16px;height:16px}
+.item .fav.on svg.i{fill:var(--red);stroke:var(--red)}
+.item .cnt{position:absolute;right:5px;bottom:5px;min-width:22px;height:22px;border-radius:11px;background:rgba(40,36,30,.78);color:#fff;font-size:11px;display:flex;align-items:center;justify-content:center;padding:0 6px}
+.item .lbl{position:absolute;left:5px;bottom:5px;font-size:10px;background:rgba(255,255,255,.88);border-radius:6px;padding:2px 6px;max-width:64%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* ---- 登録 ---- */
+.photo-drop{display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;width:100%;aspect-ratio:3/4;max-height:48vh;
+  border:1.5px dashed #d8d2c6;border-radius:18px;color:var(--sub);background:#fff;overflow:hidden;font-size:14px;padding:0}
+.photo-drop img{width:100%;height:100%;object-fit:contain;background:#f3f0ea}
+label.f{display:block;font-size:13px;color:var(--sub);margin:16px 0 8px;font-weight:700}
+.swatches{display:flex;flex-wrap:wrap;gap:9px}
+.sw{width:34px;height:34px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 1px var(--line);padding:0}
+.sw.on{box-shadow:0 0 0 2.5px var(--ink)}
+.hint{font-size:12px;color:var(--sub);margin-top:6px;line-height:1.6}
+input[type=text]{width:100%;border:1px solid var(--line);border-radius:12px;padding:12px;font-size:15px;background:#fff;font-family:inherit;color:var(--ink)}
+
+/* ---- スタイリスト ---- */
+.stylist-bg{background:radial-gradient(120% 60% at 80% 0%,#ece6f6 0%,rgba(236,230,246,0) 60%),radial-gradient(90% 50% at 0% 10%,#f6eee4 0%,rgba(246,238,228,0) 60%);margin:0 -16px;padding:0 16px}
+.lead{text-align:center;font-size:15px;line-height:1.7;margin:4px 0 16px;font-weight:600;color:#3c3a34}
+.conds{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.cond{border:1px solid var(--line);background:rgba(255,255,255,.9);border-radius:14px;padding:9px 6px;display:flex;align-items:center;gap:7px;box-shadow:var(--shadow);text-align:left;min-width:0}
+.cond .e{font-size:22px;line-height:1}
+.cond .t{font-size:11px;line-height:1.35;min-width:0}
+.cond .t b{display:block;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.deck{position:relative;height:430px;margin-top:16px}
+.scard{position:absolute;inset:0;background:#fff;border-radius:22px;box-shadow:0 8px 28px rgba(60,50,30,.14);overflow:hidden;display:flex;flex-direction:column;
+  touch-action:none;user-select:none;-webkit-user-select:none;will-change:transform;transition:transform .3s ease}
+.scard.back1{transform:translateY(12px) scale(.95)}
+.scard.back2{transform:translateY(24px) scale(.9);opacity:.7}
+.scard .pic{flex:1;min-height:0;position:relative}
+.scard img{pointer-events:none;-webkit-user-drag:none}
+.scard .cap{padding:12px 16px 14px}
+.scard .cap b{font-size:16px}
+.scard .cap p{margin:3px 0 0;font-size:12px;color:var(--sub);line-height:1.6}
+.rec{position:absolute;right:12px;top:12px;font-family:"Cormorant Garamond",Georgia,serif;font-style:italic;font-size:16px;color:#6d6658;background:rgba(255,255,255,.8);padding:2px 10px;border-radius:999px}
+.explore{position:absolute;left:12px;top:12px;background:var(--dark);color:#fff;font-size:11px;border-radius:999px;padding:4px 10px}
+.stamp{position:absolute;top:56px;font-size:28px;font-weight:800;letter-spacing:.08em;border:3px solid;border-radius:10px;padding:2px 14px;opacity:0;background:rgba(255,255,255,.88);pointer-events:none}
+.stamp.ok{left:20px;color:#3d8a5a;transform:rotate(-12deg)}
+.stamp.no{right:20px;color:var(--red);transform:rotate(12deg)}
+.stamp.wear{left:50%;top:auto;bottom:24px;transform:translateX(-50%);color:#b08a3c;font-size:22px;white-space:nowrap}
+.swipe-btns{display:flex;justify-content:center;align-items:center;gap:18px;margin:34px 0 6px}
+.sbtn{width:60px;height:60px;border-radius:50%;border:1px solid var(--line);background:#fff;box-shadow:0 3px 12px rgba(60,50,30,.1);display:flex;align-items:center;justify-content:center;padding:0}
+.sbtn svg.i{width:28px;height:28px;stroke-width:2.2}
+.sbtn.small{width:46px;height:46px}.sbtn.small svg.i{width:21px;height:21px}
+.sbtn.no{color:var(--red)}.sbtn.ok{color:#3d8a5a}.sbtn.ok svg.i{fill:#3d8a5a}.sbtn.wear{color:#b08a3c}.sbtn:not(.no):not(.ok):not(.wear){color:var(--sub)}
+.sbtn:active{transform:scale(.93)}
+.sbtn:disabled{opacity:.35}
+.swipe-hint{text-align:center;font-size:12px;color:var(--sub);margin:6px 0 0;line-height:1.7}
+.pairs{display:flex;gap:8px;flex-wrap:wrap}
+.pair{display:flex;align-items:center;gap:4px;background:var(--chip);border-radius:12px;padding:5px}
+.pair img{width:40px;height:50px;object-fit:cover;border-radius:8px}
+.pair span{font-size:12px;color:var(--sub)}
+
+/* ---- コーデ詳細 ---- */
+.detail-pic{display:flex;gap:8px;height:400px}
+.detail-pic .main{flex:1;border-radius:16px;overflow:hidden;min-width:0}
+.detail-pic .side{width:62px;display:flex;flex-direction:column;gap:6px;overflow-y:auto}
+.detail-pic .side img{width:62px;height:72px;object-fit:cover;border-radius:10px;border:1px solid var(--line);background:var(--tile);flex:none}
+.d-title{font-size:19px;font-weight:700;margin:16px 0 4px}
+.d-desc{font-size:14px;color:#55514a;line-height:1.7;margin:0}
+.tags{display:flex;gap:6px;flex-wrap:wrap;margin:12px 0}
+.tags span{font-size:12px;border:1px solid var(--line);background:#fff;border-radius:999px;padding:4px 11px}
+.bar{position:fixed;left:0;right:0;bottom:0;z-index:10;background:rgba(247,245,241,.97);border-top:1px solid var(--line);
+  padding:12px 16px;padding-bottom:calc(12px + env(safe-area-inset-bottom));display:flex;gap:10px}
+.bar .btn{padding:13px 10px;font-size:14px}
+.bar .btn.light{flex:0 0 40%}
+.btn.light.on svg.i{fill:var(--red);stroke:var(--red)}
+
+/* ---- カレンダー ---- */
+.cal-head{display:flex;align-items:center;justify-content:space-between;margin:4px 0 10px}
+.cal-head b{font-size:18px}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);text-align:center;row-gap:4px}
+.cal .w{font-size:11px;color:var(--sub);padding:4px 0}
+.cal .w:first-child,.cal .sun{color:var(--red)}
+.cal button{border:0;background:none;font-size:16px;height:44px;position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.cal button span{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center}
+.cal button.today span{border:1.5px solid var(--dark)}
+.cal button.sel span{background:var(--dark);color:#fff}
+.cal button.out{color:#cfcac0}
+.cal button i{position:absolute;bottom:1px;width:5px;height:5px;border-radius:50%;background:var(--accent)}
+.day-card{display:flex;gap:12px;padding:10px;align-items:stretch;margin-bottom:10px}
+.day-card .pic{width:110px;height:120px;border-radius:12px;overflow:hidden;flex:none}
+.day-card .body{flex:1;display:flex;flex-direction:column;min-width:0}
+.day-card .body b{font-size:14px;line-height:1.5}
+.day-card .body small{color:var(--sub);font-size:12px;margin-top:2px}
+.day-card .acts{margin-top:auto;display:flex;gap:6px;justify-content:flex-end}
+.mini{border:1px solid var(--line);background:var(--chip);border-radius:999px;padding:6px 12px;font-size:12px;white-space:nowrap;display:inline-flex;align-items:center;gap:2px}
+.mini svg.i{width:13px;height:13px}
+
+/* ---- マイページ ---- */
+.profile{display:flex;align-items:center;gap:16px;padding:16px}
+.avatar{width:76px;height:76px;border-radius:50%;background:linear-gradient(135deg,#e7dfd2,#cbbfab);display:flex;align-items:center;justify-content:center;font-size:30px;color:#fff;overflow:hidden;border:0;padding:0;flex:none}
+.avatar img{width:100%;height:100%;object-fit:cover}
+.profile b{font-size:20px}
+.profile small{display:block;color:var(--sub);font-size:13px;margin-top:4px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);margin-top:12px;padding:14px 0}
+.stats div{text-align:center;border-left:1px solid var(--line);display:flex;flex-direction:column;align-items:center;gap:4px}
+.stats div:first-child{border-left:0}
+.stats small{font-size:11px;color:var(--sub)}
+.stats b{font-size:22px}.stats b em{font-style:normal;font-size:11px;font-weight:400;margin-left:1px}
+.chart{padding:14px;margin-top:12px}
+.chart .h{display:flex;justify-content:space-between;font-size:14px;font-weight:700;margin-bottom:10px}
+.chart .h small{font-weight:400;color:var(--sub);font-size:12px}
+.bars{display:flex;align-items:flex-end;gap:5px;height:110px;border-bottom:1px solid var(--line)}
+.bars div{flex:1;background:#d9cbb6;border-radius:4px 4px 0 0;min-height:2px}
+.bars div.now{background:#b39b7c}
+.blabels{display:flex;justify-content:space-between;font-size:11px;color:var(--sub);margin-top:6px}
+.menu{margin-top:12px;padding:4px 0}
+.menu button{width:100%;border:0;background:none;display:flex;align-items:center;gap:12px;padding:13px 16px;font-size:14px;text-align:left}
+.menu button span{flex:1}
+.menu button small{color:var(--sub);font-size:12px}
+.menu button + button{border-top:1px solid var(--line)}
+
+/* ---- シート・トースト ---- */
+.sheet{position:fixed;inset:0;z-index:30;background:rgba(20,18,14,.45);display:flex;align-items:flex-end}
+.sheet .inner{background:var(--bg);width:100%;max-height:90vh;overflow:auto;border-radius:22px 22px 0 0;padding:18px 16px;padding-bottom:calc(20px + env(safe-area-inset-bottom))}
+.sheet h3{margin:0 0 12px;font-size:16px}
+.sheet img.big{width:100%;max-height:46vh;object-fit:contain;border-radius:14px;background:#f1eee8}
+.kv{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0}
+.kv span{background:#fff;border:1px solid var(--line);border-radius:999px;padding:4px 10px;font-size:12px}
+.note{font-size:13px;color:#5f5a51;line-height:1.75}
+.pick-list button{width:100%;display:flex;gap:12px;align-items:center;border:0;background:#fff;border-radius:14px;padding:8px;margin-bottom:8px;text-align:left;box-shadow:var(--shadow)}
+.pick-list .pic{width:64px;height:76px;border-radius:10px;overflow:hidden;flex:none}
+.toast{position:fixed;left:50%;bottom:96px;transform:translateX(-50%);background:var(--dark);color:#fff;padding:10px 18px;border-radius:999px;font-size:14px;z-index:40;opacity:0;transition:opacity .2s;pointer-events:none;white-space:nowrap}
+.toast.show{opacity:1}
+</style>
+</head>
+<body>
+
+<!-- ホーム -->
+<section class="view" id="v-home"></section>
+<!-- クローゼット -->
+<section class="view hidden" id="v-closet"></section>
+<!-- スタイリスト -->
+<section class="view hidden" id="v-stylist"></section>
+<!-- カレンダー -->
+<section class="view hidden" id="v-calendar"></section>
+<!-- マイページ -->
+<section class="view hidden" id="v-mypage"></section>
+<!-- 保存したコーデ一覧 -->
+<section class="view hidden" id="v-saved"></section>
+<!-- コーデ詳細 -->
+<section class="view no-nav hidden" id="v-detail"></section>
+
+<!-- 服の登録・編集(入力欄があるので作り直さずに使い回す) -->
+<section class="view no-nav hidden" id="v-add">
+  <div class="top center">
+    <button class="icon-btn" data-back type="button" aria-label="戻る"><svg class="i" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button>
+    <h1 id="add-title">アイテムを登録</h1>
+    <span style="width:34px"></span>
+  </div>
+  <input type="file" id="file" accept="image/*" capture="environment" class="hidden">
+  <input type="file" id="file2" accept="image/*" class="hidden">
+  <button class="photo-drop" id="photo" type="button"></button>
+  <div class="row" style="margin-top:10px">
+    <button class="btn light" id="btn-cam" type="button">カメラで撮る</button>
+    <button class="btn light" id="btn-lib" type="button">写真から選ぶ</button>
+  </div>
+  <p class="hint">白い壁や床の前で、服を広げて撮ると一覧がきれいに並びます。</p>
+  <label class="f">ジャンル</label>
+  <div class="chips wrap" id="e-cat"></div>
+  <label class="f">種類</label>
+  <div class="chips wrap" id="e-sub"></div>
+  <label class="f">季節(いくつでも)</label>
+  <div class="chips wrap" id="e-season"></div>
+  <label class="f">色</label>
+  <div class="swatches" id="e-color"></div>
+  <div class="hint" id="color-hint"></div>
+  <label class="f">テイスト</label>
+  <div class="chips wrap" id="e-style"></div>
+  <label class="f">メモ(ブランド・買った店など)</label>
+  <input type="text" id="e-memo" placeholder="例:ユニクロ、2025年秋">
+  <div style="height:22px"></div>
+  <button class="btn" id="btn-save" type="button">保存する</button>
+  <div style="height:10px"></div>
+  <button class="btn danger hidden" id="btn-del" type="button">このアイテムを削除</button>
+</section>
+
+<nav class="tabs" id="tabs">
+  <button data-v="home"><svg class="i" viewBox="0 0 24 24"><path d="M3.5 11L12 4l8.5 7v9h-5.5v-6h-6v6H3.5z"/></svg>ホーム</button>
+  <button data-v="closet"><svg class="i" viewBox="0 0 24 24"><path d="M10 5.5a2 2 0 1 1 3 1.7c-.6.4-1 .8-1 1.6V9.5"/><path d="M12 9.5L3 16.5V18h18v-1.5z"/></svg>クローゼット</button>
+  <button data-v="stylist"><svg class="i" viewBox="0 0 24 24"><path d="M11 3c.8 4.5 2.5 6.2 7 7-4.5.8-6.2 2.5-7 7-.8-4.5-2.5-6.2-7-7 4.5-.8 6.2-2.5 7-7z"/><path d="M19 15c.3 1.6.9 2.2 2.5 2.5-1.6.3-2.2.9-2.5 2.5-.3-1.6-.9-2.2-2.5-2.5 1.6-.3 2.2-.9 2.5-2.5z"/></svg>スタイリスト</button>
+  <button data-v="calendar"><svg class="i" viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>カレンダー</button>
+  <button data-v="mypage"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-4.5 4-6.5 8-6.5s7 2 8 6.5"/></svg>マイページ</button>
+</nav>
+
+<div class="sheet hidden" id="sheet"><div class="inner" id="sheet-inner"></div></div>
+<div class="toast" id="toast"></div>
+<input type="file" id="importFile" accept="application/json,.json" class="hidden">
+<input type="file" id="avatarFile" accept="image/*" class="hidden">
+
+<script>
+// ================= 定義 =================
+const CATS = [
+  {id:'tops',   name:'トップス', subs:['シャツ','Tシャツ','ニット','スウェット・パーカー','ポロシャツ','ブラウス','その他']},
+  {id:'bottoms',name:'パンツ',   subs:['スラックス','ジーンズ','チノパン','スカート','ショートパンツ','その他']},
+  {id:'outer',  name:'アウター', subs:['ジャケット','コート','ダウン','カーディガン','ブルゾン','その他']},
+  {id:'shoes',  name:'靴',       subs:['スニーカー','革靴','ブーツ','サンダル','パンプス','その他']},
+  {id:'bag',    name:'バッグ',   subs:['トート','リュック','ショルダー','ハンドバッグ','その他']},
+  {id:'other',  name:'小物',     subs:['帽子','マフラー','ベルト','その他']},
+];
+const SEASONS = ['春','夏','秋','冬'];
+const STYLES = ['カジュアル','きれいめ','フォーマル','スポーツ'];
+const COLORS = [
+  {id:'black', name:'黒',     hex:'#1e1e1e', rgb:[30,30,30],   neutral:true},
+  {id:'white', name:'白',     hex:'#f7f7f5', rgb:[245,245,242],neutral:true},
+  {id:'gray',  name:'グレー', hex:'#8f8f8f', rgb:[143,143,143],neutral:true},
+  {id:'navy',  name:'紺',     hex:'#24345c', rgb:[36,52,92],   neutral:true},
+  {id:'beige', name:'ベージュ',hex:'#d8c4a2',rgb:[216,196,162],neutral:true},
+  {id:'brown', name:'茶',     hex:'#6e4a2f', rgb:[110,74,47],  neutral:true},
+  {id:'khaki', name:'カーキ', hex:'#76764a', rgb:[118,118,74], neutral:true},
+  {id:'denim', name:'デニム', hex:'#4f6f97', rgb:[79,111,151], neutral:true},
+  {id:'blue',  name:'青',     hex:'#2f6fd0', rgb:[47,111,208]},
+  {id:'skyblue',name:'水色',  hex:'#9cc8ec', rgb:[156,200,236]},
+  {id:'green', name:'緑',     hex:'#3f8a4f', rgb:[63,138,79]},
+  {id:'red',   name:'赤',     hex:'#c4322f', rgb:[196,50,47]},
+  {id:'pink',  name:'ピンク', hex:'#eaa3b8', rgb:[234,163,184]},
+  {id:'orange',name:'オレンジ',hex:'#e2812f',rgb:[226,129,47]},
+  {id:'yellow',name:'黄',     hex:'#e8cd3e', rgb:[232,205,62]},
+  {id:'purple',name:'紫',     hex:'#7a4f9c', rgb:[122,79,156]},
+];
+const GOOD_PAIRS = [['blue','skyblue'],['skyblue','pink'],['green','beige'],['red','navy'],['pink','gray'],
+  ['yellow','navy'],['orange','navy'],['purple','gray'],['green','brown'],['skyblue','yellow']];
+// 行き先ごとの好み(テイスト・アイテムの加点と減点)
+const DESTS = {
+  'おまかせ':{e:'✨', styles:[], like:{}, avoid:{}},
+  '仕事':   {e:'💼', styles:['きれいめ','フォーマル'], like:{tops:['シャツ','ニット'],bottoms:['スラックス','チノパン'],outer:['ジャケット','コート'],shoes:['革靴'],bag:['トート','ハンドバッグ']}, avoid:{tops:['スウェット・パーカー','Tシャツ'],bottoms:['ショートパンツ','ジーンズ'],shoes:['サンダル'],styles:['スポーツ']}},
+  '休日':   {e:'☕', styles:['カジュアル'], like:{shoes:['スニーカー']}, avoid:{styles:['フォーマル']}},
+  'ゴルフ': {e:'⛳', styles:['スポーツ','カジュアル','きれいめ'], like:{tops:['ポロシャツ','ニット'],bottoms:['チノパン','スラックス'],outer:['ブルゾン','カーディガン'],shoes:['スニーカー']}, avoid:{bottoms:['ジーンズ','ショートパンツ'],shoes:['革靴','サンダル'],styles:['フォーマル']}},
+  'デート': {e:'🍷', styles:['きれいめ'], like:{tops:['シャツ','ニット'],outer:['ジャケット','コート']}, avoid:{tops:['スウェット・パーカー'],styles:['スポーツ']}},
+  '旅行':   {e:'🧳', styles:['カジュアル'], like:{shoes:['スニーカー'],bag:['リュック','ショルダー']}, avoid:{shoes:['革靴','パンプス'],styles:['フォーマル']}},
+};
+const catName = id => (CATS.find(c=>c.id===id)||{}).name||'';
+const colorOf = id => COLORS.find(c=>c.id===id) || COLORS[2];
+function currentSeason(d=new Date()){ const m=d.getMonth()+1; return m>=3&&m<=5?'春':m>=6&&m<=8?'夏':m>=9&&m<=11?'秋':'冬'; }
+const pad=n=>String(n).padStart(2,'0');
+const dkey = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const todayKey = () => dkey(new Date());
+const WD=['日','月','火','水','木','金','土'];
+function dLabel(k){ const [y,m,d]=k.split('-').map(Number); const dt=new Date(y,m-1,d); return `${m}月${d}日(${WD[dt.getDay()]})`; }
+
+const ICONS={
+  back:'<path d="M15 5l-7 7 7 7"/>', chev:'<path d="M9 5l7 7-7 7"/>', search:'<circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/>',
+  plus:'<path d="M12 5v14M5 12h14"/>', heart:'<path d="M12 20s-7.5-4.6-7.5-10.2A4.2 4.2 0 0 1 12 7.3a4.2 4.2 0 0 1 7.5 2.5C19.5 15.4 12 20 12 20z"/>',
+  bookmark:'<path d="M6.5 3.5h11v17l-5.5-3.8-5.5 3.8z"/>', check:'<path d="M5 12.5l4.5 4.5L19 7.5"/>', info:'<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.6v.4"/>',
+  hanger:'<path d="M10 5.5a2 2 0 1 1 3 1.7c-.6.4-1 .8-1 1.6V9.5"/><path d="M12 9.5L3 16.5V18h18v-1.5z"/>',
+  shirt:'<path d="M9 4a3 3 0 0 0 6 0l5 2-2 5-2-1v10H8V10l-2 1-2-5z"/>',
+  sparkle:'<path d="M11 3c.8 4.5 2.5 6.2 7 7-4.5.8-6.2 2.5-7 7-.8-4.5-2.5-6.2-7-7 4.5-.8 6.2-2.5 7-7z"/><path d="M19 15c.3 1.6.9 2.2 2.5 2.5-1.6.3-2.2.9-2.5 2.5-.3-1.6-.9-2.2-2.5-2.5 1.6-.3 2.2-.9 2.5-2.5z"/>',
+  calendar:'<rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/>',
+  pin:'<path d="M12 21s-6-6-6-11a6 6 0 0 1 12 0c0 5-6 11-6 11z"/><circle cx="12" cy="10" r="2.2"/>',
+  out:'<path d="M12 15V4M7.5 8.5L12 4l4.5 4.5M5 14v6h14v-6"/>', inn:'<path d="M12 4v11M7.5 10.5L12 15l4.5-4.5M5 14v6h14v-6"/>',
+  help:'<circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .8-1 1.5v.5M12 17v.3"/>',
+  trash:'<path d="M5 7h14M10 7V4.5h4V7M7 7l1 13h8l1-13"/>', x:'<path d="M6 6l12 12M18 6L6 18"/>', undo:'<path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/>',
+  sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4"/>', refresh:'<path d="M20 11a8 8 0 1 0-2.3 5.7M20 5v6h-6"/>',
+};
+const ic = (n,extra='') => `<svg class="i" viewBox="0 0 24 24" ${extra}>${ICONS[n]}</svg>`;
+
+// ================= 保存(IndexedDB) =================
+const DB_NAME='closet-app', DB_VER=3;
+let db;
+function openDB(){
+  return new Promise((res,rej)=>{
+    const r=indexedDB.open(DB_NAME,DB_VER);
+    r.onupgradeneeded=()=>{ const d=r.result;
+      for(const s of ['items','outfits','wears','meta']) if(!d.objectStoreNames.contains(s)) d.createObjectStore(s,{keyPath:'id'}); };
+    r.onsuccess=()=>{db=r.result;res()}; r.onerror=()=>rej(r.error);
+  });
+}
+function tx(store,mode,fn){
+  return new Promise((res,rej)=>{ const t=db.transaction(store,mode), s=t.objectStore(store); let out;
+    const r=fn(s); if(r) r.onsuccess=()=>{out=r.result}; t.oncomplete=()=>res(out); t.onerror=()=>rej(t.error); });
+}
+const getAll=s=>tx(s,'readonly',st=>st.getAll());
+const put=(s,v)=>tx(s,'readwrite',st=>st.put(v));
+const del=(s,id)=>tx(s,'readwrite',st=>st.delete(id));
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+
+// 設定(名前・天気の地域など)は端末に小さく保存
+const PREF_KEY='closet-prefs';
+let prefs={name:'',bio:'ファッションを楽しむ大人',avatar:'',loc:{name:'東京',lat:35.68,lon:139.76}};
+try{ Object.assign(prefs, JSON.parse(localStorage.getItem(PREF_KEY)||'{}')); }catch(e){}
+function savePrefs(){ try{ localStorage.setItem(PREF_KEY,JSON.stringify(prefs)); }catch(e){ toast('設定を保存できませんでした'); } }
+
+// ================= 状態 =================
+let items=[], outfits=[], wears=[];
+const byId=id=>items.find(i=>i.id===id);
+async function load(){
+  [items,outfits,wears]=await Promise.all([getAll('items'),getAll('outfits'),getAll('wears')]);
+  const meta=await getAll('meta'); const l=meta.find(x=>x.id==='learn'); if(l) learn=l;
+  items.sort((a,b)=>b.created-a.created); outfits.sort((a,b)=>b.created-a.created); wears.sort((a,b)=>b.date.localeCompare(a.date)||b.created-a.created);
+}
+function wearCount(id){ return wears.reduce((n,w)=>n+(w.ids.includes(id)?1:0),0); }
+
+// ================= 共通 =================
+const $=id=>document.getElementById(id);
+function esc(s){ return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function toast(m){ const t=$('toast'); t.textContent=m; t.classList.add('show'); clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove('show'),1900); }
+function chips(el,list,selected,onPick,multi=false){
+  el.innerHTML='';
+  list.forEach(o=>{ const b=document.createElement('button'); b.type='button'; b.className='chip';
+    if(multi?selected.includes(o.id):selected===o.id) b.classList.add('on');
+    b.textContent=o.name; b.onclick=()=>onPick(o.id); el.appendChild(b); });
+}
+function openSheet(html){ $('sheet-inner').innerHTML=html; $('sheet').classList.remove('hidden'); }
+function closeSheet(){ $('sheet').classList.add('hidden'); }
+$('sheet').onclick=e=>{ if(e.target.id==='sheet') closeSheet(); };
+
+// コーデの絵:服の写真をきれいに並べる
+const WEIGHT={outer:3,tops:3,bottoms:4,shoes:2,bag:2,other:2};
+function collage(ids){
+  const list=ids.map(byId).filter(Boolean); const by={};
+  list.forEach(i=>{ if(!by[i.cat]) by[i.cat]=i; });
+  let left, right;
+  if(by.outer){ left=[by.outer,by.tops]; right=[by.bottoms,by.shoes,by.bag]; }
+  else { left=[by.tops,by.shoes]; right=[by.bottoms,by.bag]; }
+  left=left.filter(Boolean); right=right.filter(Boolean);
+  if(!left.length&&!right.length) left=list.slice(0,2);
+  const col=a=>`<div class="col">${a.map(i=>`<div class="tile" style="flex:${WEIGHT[i.cat]||2}"><img src="${i.photo}" alt="${esc(i.sub||catName(i.cat))}"></div>`).join('')}</div>`;
+  return `<div class="collage">${col(left)}${right.length?col(right):''}</div>`;
+}
+
+// ================= 画面の切り替え =================
+const NAV_VIEWS=['home','closet','stylist','calendar','mypage'];
+const ALL_VIEWS=[...NAV_VIEWS,'saved','detail','add'];
+let stack=['home'];
+function render(v){
+  ({home:renderHome,closet:renderCloset,stylist:renderStylist,calendar:renderCalendar,mypage:renderMypage,saved:renderSaved,detail:renderDetail,add:renderEditor})[v]();
+}
+function go(v,{push=true}={}){
+  if(NAV_VIEWS.includes(v)) stack=[v]; else if(push) stack.push(v);
+  ALL_VIEWS.forEach(x=>$('v-'+x).classList.toggle('hidden',x!==v));
+  $('tabs').classList.toggle('hidden',v==='detail'||v==='add');
+  const navOn = NAV_VIEWS.includes(v)?v:stack[0];
+  document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('on',b.dataset.v===navOn));
+  render(v); window.scrollTo(0,0);
+}
+function back(){ if(stack.length>1){ stack.pop(); go(stack[stack.length-1],{push:false}); } else go('home'); }
+document.querySelectorAll('#tabs button').forEach(b=>b.onclick=()=>go(b.dataset.v));
+document.addEventListener('click',e=>{ if(e.target.closest('[data-back]')) back(); });
+
+// ================= 天気 =================
+let weather=null, weatherLoading=null;
+const WX=c=> c===0?['☀️','晴れ']: c<=2?['🌤️','晴れ時々曇り']: c===3?['☁️','曇り']: c<=48?['🌫️','霧']: c<=67?['🌧️','雨']: c<=77?['❄️','雪']: c<=82?['🌦️','にわか雨']: ['⛈️','雷雨'];
+function loadWeather(){
+  if(weatherLoading) return weatherLoading;
+  const {lat,lon}=prefs.loc;
+  weatherLoading=fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=temperature_2m_max,temperature_2m_min,weather_code&timezone=auto&forecast_days=1`)
+    .then(r=>r.json()).then(j=>{ const d=j.daily; weather={max:Math.round(d.temperature_2m_max[0]),min:Math.round(d.temperature_2m_min[0]),code:d.weather_code[0]}; return weather; })
+    .catch(()=>{ weather=null; return null; });
+  return weatherLoading;
+}
+
+// ================= コーデ提案の仕組み =================
+// ctx: {season, style('all'|テイスト), dest, temp(最高気温 or null), fixed(必ず入れる服)}
+// 組み合わせをたくさん作り、ルールの点数+スワイプで覚えた好みの点数で並べる
+function generateCandidates(ctx){
+  const inSeason=cat=>items.filter(i=>i.cat===cat&&i.seasons.includes(ctx.season));
+  const fixed=ctx.fixed;
+  const tops=inSeason('tops'), bottoms=inSeason('bottoms');
+  if((!tops.length&&fixed?.cat!=='tops')||(!bottoms.length&&fixed?.cat!=='bottoms')) return {error:'need', tops:tops.length, bottoms:bottoms.length};
+  const outer=inSeason('outer'), shoes=inSeason('shoes'), bag=inSeason('bag');
+  const t=ctx.temp;
+  const wantOuter = t!=null ? t<20 : (ctx.season==='秋'||ctx.season==='冬');
+  const dest=DESTS[ctx.dest]||DESTS['おまかせ'];
+  const recent=new Set(wears.filter(w=>daysAgo(w.date)<=3).flatMap(w=>w.ids));
+  const pick=a=>a[Math.floor(Math.random()*a.length)];
+  const cands=[], seen=new Set();
+  for(let k=0;k<600;k++){
+    const o={};
+    o.tops = fixed?.cat==='tops'?fixed:pick(tops);
+    o.bottoms = fixed?.cat==='bottoms'?fixed:pick(bottoms);
+    if(fixed?.cat==='outer') o.outer=fixed; else if(wantOuter&&outer.length) o.outer=pick(outer);
+    if(fixed?.cat==='shoes') o.shoes=fixed; else if(shoes.length) o.shoes=pick(shoes);
+    if(fixed?.cat==='bag') o.bag=fixed; else if(bag.length) o.bag=pick(bag);
+    const list=Object.values(o); const key=list.map(i=>i.id).sort().join(',');
+    if(seen.has(key)) continue; seen.add(key);
+    let s=colorScore(list)+styleScore(list)+learnScore(list);
+    for(const i of list){
+      if(ctx.style!=='all'&&i.style===ctx.style) s+=1.5;
+      if(dest.styles.includes(i.style)) s+=1;
+      if((dest.like[i.cat]||[]).includes(i.sub)) s+=2;
+      if((dest.avoid[i.cat]||[]).includes(i.sub)) s-=3;
+      if((dest.avoid.styles||[]).includes(i.style)) s-=2.5;
+      if(recent.has(i.id)&&i!==fixed) s-=1;
+    }
+    if(o.outer&&t!=null){
+      const heavy=['コート','ダウン'].includes(o.outer.sub);
+      if(t<10) s+= heavy?3:-1; else if(t<17) s+= heavy?-0.5:1.5; else s+= heavy?-3:1;
+    }
+    cands.push({ids:list.map(i=>i.id),key,score:s+Math.random()*1.6});
+  }
+  cands.sort((a,b)=>b.score-a.score);
+  return {cands};
+}
+function suggestOutfits(ctx,n=3){
+  const r=generateCandidates(ctx); if(r.error) return r;
+  return {outfits:r.cands.slice(0,n).map(c=>describe(c.ids,ctx))};
+}
+
+// ================= 好みの学習(スワイプ) =================
+// 服どうしのペア・色のペア・テイストのペアごとに点を貯める。古い判断ほど効き目を弱める(60日で半分)
+let learn={id:'learn',pairs:{},count:0,ok:0,no:0};
+const HALF_LIFE=60*864e5;
+function effv(r){ return r? r.v*Math.pow(0.5,(Date.now()-r.t)/HALF_LIFE) : 0; }
+function pairKeys(list){
+  const keys=[];
+  for(let a=0;a<list.length;a++) for(let b=a+1;b<list.length;b++){
+    const x=list[a], y=list[b];
+    keys.push({k:'i:'+[x.id,y.id].sort().join('|'),w:0.8});
+    if(x.color!==y.color) keys.push({k:'c:'+[x.color,y.color].sort().join('|'),w:0.35});
+    keys.push({k:'s:'+[x.style,y.style].sort().join('|'),w:0.25});
+  }
+  return keys;
+}
+function learnScore(list){
+  let s=0; for(const {k,w} of pairKeys(list)) s+=effv(learn.pairs[k])*w;
+  return Math.max(-6,Math.min(6,s));
+}
+function applyLearn(list,delta){
+  const prev={}, done=new Set();
+  for(const {k} of pairKeys(list)){
+    if(done.has(k)) continue; done.add(k);
+    prev[k]=learn.pairs[k]?{...learn.pairs[k]}:null;
+    learn.pairs[k]={v:Math.max(-5,Math.min(5,effv(learn.pairs[k])+delta)),t:Date.now()};
+  }
+  return prev;
+}
+function saveLearn(){ put('meta',learn).catch(()=>{}); }
+function learnedPairs(sign){
+  return Object.entries(learn.pairs).filter(([k])=>k.startsWith('i:'))
+    .map(([k,r])=>({ids:k.slice(2).split('|'),v:effv(r)}))
+    .filter(p=>p.ids.every(byId)&&(sign>0?p.v>=1:p.v<=-1))
+    .sort((a,b)=>sign>0?b.v-a.v:a.v-b.v).slice(0,3);
+}
+function daysAgo(k){ const [y,m,d]=k.split('-').map(Number); return Math.round((new Date().setHours(0,0,0,0)-new Date(y,m-1,d))/864e5); }
+function colorScore(list){
+  const acc=[...new Set(list.map(i=>i.color).filter(c=>!colorOf(c).neutral))]; let s=0;
+  if(acc.length===0) s+=2; else if(acc.length===1) s+=3;
+  else if(acc.length===2) s+=GOOD_PAIRS.some(([a,b])=>acc.includes(a)&&acc.includes(b))?2:-2; else s-=4;
+  const cols=list.map(i=>i.color);
+  if(cols.includes('black')&&cols.includes('navy')) s-=1;
+  if(cols.filter(c=>c==='denim').length>1) s-=1;
+  return s;
+}
+function styleScore(list){ const st=list.map(i=>i.style); let s=0;
+  if(st.includes('フォーマル')&&st.includes('スポーツ')) s-=3; if(new Set(st).size===1) s+=1; return s; }
+// タイトル・説明・タグを作る
+function describe(ids,ctx={}){
+  const list=ids.map(byId).filter(Boolean);
+  const by={}; list.forEach(i=>{ if(!by[i.cat]) by[i.cat]=i; });
+  const st=list.map(i=>i.style); const cnt=s=>st.filter(x=>x===s).length;
+  let title;
+  if(ctx.dest==='ゴルフ') title='爽やかなゴルフスタイル';
+  else if(ctx.dest==='仕事') title='信頼感のある仕事スタイル';
+  else if(ctx.dest==='旅行') title='身軽な旅行スタイル';
+  else if(ctx.dest==='デート') title='品よく見せるデートスタイル';
+  else if(cnt('フォーマル')>=2) title='きちんと感のあるフォーマル';
+  else if(cnt('きれいめ')&&cnt('カジュアル')) title='大人の上品カジュアル';
+  else if(cnt('きれいめ')) title='落ち着いたきれいめスタイル';
+  else if(cnt('スポーツ')) title='動きやすいアクティブスタイル';
+  else title='肩の力を抜いた休日カジュアル';
+  const main=[by.outer,by.tops,by.bottoms].filter(Boolean).map(i=>i.sub||catName(i.cat));
+  const acc=[...new Set(list.map(i=>i.color).filter(c=>!colorOf(c).neutral))].map(c=>colorOf(c).name);
+  const base=[...new Set(list.map(i=>i.color).filter(c=>colorOf(c).neutral))].map(c=>colorOf(c).name);
+  let colorTxt = acc.length===0 ? `${base.slice(0,2).join('と')}の落ち着いた色でまとめた着こなし`
+    : acc.length===1 ? `${base.slice(0,2).join('・')||'ベーシックな色'}に${acc[0]}を効かせた着こなし` : `${acc.join('と')}の相性のいい色合わせ`;
+  const note=`${main.join('×')}で、${colorTxt}。`;
+  const tags=[...new Set(st)];
+  const season=ctx.season||currentSeason();
+  const seasons=[...new Set(list.flatMap(i=>i.seasons))];
+  if(seasons.includes('秋')&&seasons.includes('冬')) tags.push('秋冬'); else if(seasons.includes('春')&&seasons.includes('夏')) tags.push('春夏'); else tags.push(season);
+  if(ctx.dest&&ctx.dest!=='おまかせ') tags.push(ctx.dest);
+  return {ids,title,note,tags,season};
+}
+const sameIds=(a,b)=>a.length===b.length&&[...a].sort().join()===[...b].sort().join();
+const savedOf=o=>outfits.find(x=>sameIds(x.ids,o.ids));
+
+// ================= ホーム =================
+let heroOutfit=null;
+async function renderHome(){
+  const v=$('v-home');
+  const todayW=wears.find(w=>w.date===todayKey());
+  if(todayW) heroOutfit={...describe(todayW.ids,{}),...pickFields(todayW)};
+  else if(!heroOutfit||!heroOutfit.ids.every(byId)){
+    const r=suggestOutfits({season:currentSeason(),style:'all',dest:'おまかせ',temp:weather?.max??null},1);
+    heroOutfit=r.outfits?.[0]||null;
+  }
+  const recent=[];
+  const seen=new Set();
+  for(const w of wears){ const k=[...w.ids].sort().join(); if(seen.has(k)) continue; seen.add(k); recent.push({...describe(w.ids),...pickFields(w),date:w.date}); if(recent.length>=8) break; }
+  for(const o of outfits){ const k=[...o.ids].sort().join(); if(seen.has(k)) continue; seen.add(k); recent.push(o); if(recent.length>=8) break; }
+  const wxTxt = weather ? `${WX(weather.code)[0]} ${weather.max}℃ / ${weather.min}℃` : '';
+  v.innerHTML=`
+    <div class="brand"><div><b class="serif">My Wardrobe</b><small>Style Your Life</small></div>
+      <button class="icon-btn" id="h-add" aria-label="アイテムを登録">${ic('plus')}</button></div>
+    ${heroOutfit? `<button class="hero" id="h-hero" type="button">${collage(heroOutfit.ids)}<div class="shade"></div>
+        ${wxTxt?`<span class="wx">${esc(prefs.loc.name)} ${wxTxt}</span>`:''}
+        <div class="txt"><div class="k">${todayW?'TODAY':'RECOMMENDED'}</div><h3>${todayW?'今日のコーディネート':'今日のおすすめ<br>コーディネート'}</h3>
+        <p>${esc(heroOutfit.title)}</p><span class="pill">このコーデを見る ${ic('chev')}</span></div></button>`
+      : `<div class="card" style="padding:26px 20px;text-align:center"><div class="serif" style="font-size:22px;margin-bottom:6px">Welcome</div>
+        <p class="note" style="margin:0 0 16px">まずは手持ちの服を写真で登録しましょう。<br>トップスとパンツが揃うと、コーデの提案が始まります。</p>
+        <button class="btn" id="h-first" type="button">${ic('plus')} アイテムを登録する</button></div>`}
+    <div class="sec-head"><h2>クイックメニュー</h2></div>
+    <div class="quick">
+      <button data-go="closet">${ic('hanger')}クローゼット</button>
+      <button data-go="saved">${ic('shirt')}コーディネート</button>
+      <button data-go="stylist">${ic('sparkle')}スタイリスト</button>
+      <button data-go="calendar">${ic('calendar')}カレンダー</button>
+    </div>
+    <div class="sec-head"><h2>最近のコーディネート</h2>${recent.length?`<button data-go="saved">すべて見る ${ic('chev')}</button>`:''}</div>
+    ${recent.length?`<div class="hscroll" id="h-recent">${recent.map((o,i)=>`<button class="thumb-outfit" data-i="${i}">${collage(o.ids)}${o.date?`<span class="d">${o.date.slice(5).replace('-','/')}</span>`:''}</button>`).join('')}</div>`
+      :`<p class="note">着たコーデや保存したコーデがここに並びます。</p>`}
+  `;
+  v.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>go(b.dataset.go));
+  $('h-add').onclick=()=>openEditor();
+  if($('h-first')) $('h-first').onclick=()=>openEditor();
+  if($('h-hero')) $('h-hero').onclick=()=>openDetail(heroOutfit);
+  v.querySelectorAll('#h-recent button').forEach(b=>b.onclick=()=>openDetail(recent[+b.dataset.i]));
+  if(!weather&&!weatherLoading) loadWeather().then(w=>{ if(w&&stack[stack.length-1]==='home'){ if(!todayW) heroOutfit=null; renderHome(); } });
+}
+function pickFields(w){ return w.title?{title:w.title,note:w.note,tags:w.tags}:{}; }
+
+// ================= クローゼット =================
+let fCat='all', fSeason='all', fQuery='', searchOpen=false;
+function renderCloset(){
+  const v=$('v-closet');
+  if(!v.dataset.built){
+    v.innerHTML=`<div class="top"><h1>クローゼット</h1>
+      <button class="icon-btn" id="c-search" aria-label="検索">${ic('search')}</button>
+      <button class="icon-btn" id="c-add" aria-label="アイテムを登録">${ic('plus')}</button></div>
+      <div class="search hidden" id="c-sbox">${ic('search')}<input id="c-q" type="text" placeholder="種類・色・メモで検索" style="border:0;padding:0"></div>
+      <div class="chips" id="c-cat"></div><div class="chips" id="c-season"></div>
+      <div class="grid" id="c-grid"></div><div class="empty hidden" id="c-empty"></div>`;
+    v.dataset.built=1;
+    $('c-add').onclick=()=>openEditor();
+    $('c-search').onclick=()=>{ searchOpen=!searchOpen; $('c-sbox').classList.toggle('hidden',!searchOpen); if(searchOpen) $('c-q').focus(); else { fQuery=''; $('c-q').value=''; renderCloset(); } };
+    $('c-q').oninput=e=>{ fQuery=e.target.value.trim(); renderGrid(); };
+  }
+  chips($('c-cat'),[{id:'all',name:'すべて'},...CATS.map(c=>({id:c.id,name:c.name})),{id:'fav',name:'♡ お気に入り'}],fCat,id=>{fCat=id;renderCloset()});
+  chips($('c-season'),[{id:'all',name:'全季節'},...SEASONS.map(s=>({id:s,name:s+'物'}))],fSeason,id=>{fSeason=id;renderCloset()});
+  renderGrid();
+}
+function renderGrid(){
+  const q=fQuery.toLowerCase();
+  const list=items.filter(i=>(fCat==='all'||(fCat==='fav'?i.fav:i.cat===fCat))&&(fSeason==='all'||i.seasons.includes(fSeason))
+    &&(!q||[i.sub,i.memo,colorOf(i.color).name,catName(i.cat),i.style].join(' ').toLowerCase().includes(q)));
+  const g=$('c-grid'); g.innerHTML='';
+  const em=$('c-empty'); em.classList.toggle('hidden',list.length>0);
+  em.innerHTML = items.length? '条件に合うアイテムがありません。' : 'まだアイテムがありません。<br>右上の ＋ から写真を撮って登録しましょう。';
+  list.forEach(i=>{
+    const n=wearCount(i.id);
+    const b=document.createElement('div'); b.className='item'; b.setAttribute('role','button');
+    b.innerHTML=`<img src="${i.photo}" alt="${esc(i.sub||catName(i.cat))}"><button class="fav ${i.fav?'on':''}" aria-label="お気に入り">${ic('heart')}</button>
+      <span class="lbl">${esc(i.sub||catName(i.cat))}</span>${n?`<span class="cnt" title="着た回数">${n}</span>`:''}`;
+    b.onclick=()=>openItem(i);
+    b.querySelector('.fav').onclick=async e=>{ e.stopPropagation(); i.fav=!i.fav; await put('items',i); renderGrid(); };
+    g.appendChild(b);
+  });
+}
+function openItem(i){
+  const c=colorOf(i.color), n=wearCount(i.id);
+  openSheet(`<img class="big" src="${i.photo}" alt="">
+    <div class="kv"><span>${catName(i.cat)}${i.sub?' / '+esc(i.sub):''}</span><span>${i.seasons.join('・')}</span>
+      <span><i style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${c.hex};border:1px solid #aaa;margin-right:4px;vertical-align:-1px"></i>${c.name}</span>
+      <span>${i.style}</span><span>着た回数 ${n}回</span></div>
+    ${i.memo?`<p class="note">${esc(i.memo)}</p>`:''}
+    <div class="row"><button class="btn light" id="sh-edit">編集</button><button class="btn" id="sh-match">${ic('sparkle')} これで組む</button></div>`);
+  $('sh-edit').onclick=()=>{ closeSheet(); openEditor(i); };
+  $('sh-match').onclick=()=>{ closeSheet(); sCtx.fixed=i; if(!i.seasons.includes(sCtx.season)){ sCtx.season=i.seasons[0]; sCtx.seasonAuto=false; } resetDeck(); go('stylist'); };
+}
+
+// ================= 登録・編集 =================
+let draft=null;
+function openEditor(item){
+  draft = item ? {...item,seasons:[...item.seasons],existing:true}
+               : {id:null,photo:null,cat:fCat!=='all'&&fCat!=='fav'?fCat:'tops',sub:'',seasons:[currentSeason()],color:'gray',style:'カジュアル',memo:'',fav:false,existing:false};
+  go('add');
+}
+function renderEditor(){
+  if(!draft) draft={id:null,photo:null,cat:'tops',sub:'',seasons:[currentSeason()],color:'gray',style:'カジュアル',memo:'',fav:false,existing:false};
+  $('add-title').textContent=draft.existing?'アイテムを編集':'アイテムを登録';
+  $('photo').innerHTML = draft.photo?`<img src="${draft.photo}" alt="">`:`<svg class="i" viewBox="0 0 24 24" style="width:42px;height:42px;stroke-width:1.3"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>タップして写真を撮る`;
+  chips($('e-cat'),CATS,draft.cat,id=>{draft.cat=id;draft.sub='';renderEditor()});
+  chips($('e-sub'),CATS.find(c=>c.id===draft.cat).subs.map(s=>({id:s,name:s})),draft.sub,id=>{draft.sub=draft.sub===id?'':id;renderEditor()});
+  chips($('e-season'),SEASONS.map(s=>({id:s,name:s})),draft.seasons,id=>{
+    draft.seasons=draft.seasons.includes(id)?draft.seasons.filter(x=>x!==id):[...draft.seasons,id];
+    draft.seasons.sort((a,b)=>SEASONS.indexOf(a)-SEASONS.indexOf(b)); renderEditor(); },true);
+  const sw=$('e-color'); sw.innerHTML='';
+  COLORS.forEach(c=>{ const b=document.createElement('button'); b.type='button'; b.className='sw'+(draft.color===c.id?' on':'');
+    b.style.background=c.hex; b.setAttribute('aria-label',c.name); b.onclick=()=>{draft.color=c.id;renderEditor()}; sw.appendChild(b); });
+  $('color-hint').textContent=`選択中: ${colorOf(draft.color).name}(写真から自動で選びます。違っていたらタップで直せます)`;
+  chips($('e-style'),STYLES.map(s=>({id:s,name:s})),draft.style,id=>{draft.style=id;renderEditor()});
+  $('e-memo').value=draft.memo||'';
+  $('btn-del').classList.toggle('hidden',!draft.existing);
+  $('btn-save').textContent=draft.existing?'変更を保存':'保存する';
+}
+$('e-memo').oninput=e=>{ if(draft) draft.memo=e.target.value; };
+$('photo').onclick=$('btn-cam').onclick=()=>$('file').click();
+$('btn-lib').onclick=()=>$('file2').click();
+$('file').onchange=$('file2').onchange=async e=>{
+  const f=e.target.files[0]; e.target.value=''; if(!f) return;
+  try{ const {dataUrl,color}=await processImage(f,900); draft.photo=dataUrl; draft.color=color; renderEditor(); }
+  catch(err){ toast('写真を読み込めませんでした'); }
+};
+function processImage(file,max){
+  return new Promise((res,rej)=>{
+    const url=URL.createObjectURL(file), img=new Image();
+    img.onload=()=>{ let w=img.naturalWidth,h=img.naturalHeight; const r=Math.min(1,max/Math.max(w,h)); w=Math.round(w*r); h=Math.round(h*r);
+      const cv=document.createElement('canvas'); cv.width=w; cv.height=h; const ctx=cv.getContext('2d'); ctx.drawImage(img,0,0,w,h);
+      URL.revokeObjectURL(url); res({dataUrl:cv.toDataURL('image/jpeg',0.8),color:guessColor(ctx,w,h)}); };
+    img.onerror=rej; img.src=url;
+  });
+}
+function guessColor(ctx,w,h){
+  const x0=Math.round(w*.3),y0=Math.round(h*.3),cw=Math.max(1,Math.round(w*.4)),ch=Math.max(1,Math.round(h*.4));
+  const d=ctx.getImageData(x0,y0,cw,ch).data, votes={};
+  for(let i=0;i<d.length;i+=16){ const r=d[i],g=d[i+1],b=d[i+2]; let best=null,bd=1e9;
+    for(const c of COLORS){ const dr=r-c.rgb[0],dg=g-c.rgb[1],db=b-c.rgb[2]; const dist=dr*dr*2+dg*dg*4+db*db*3; if(dist<bd){bd=dist;best=c.id;} }
+    votes[best]=(votes[best]||0)+1; }
+  return Object.entries(votes).sort((a,b)=>b[1]-a[1])[0]?.[0]||'gray';
+}
+$('btn-save').onclick=async()=>{
+  if(!draft.photo){ toast('先に写真を撮ってください'); return; }
+  if(!draft.seasons.length){ toast('季節を1つ以上選んでください'); return; }
+  const rec={id:draft.id||uid(),photo:draft.photo,cat:draft.cat,sub:draft.sub,seasons:draft.seasons,color:draft.color,style:draft.style,memo:draft.memo||'',fav:!!draft.fav,created:draft.created||Date.now()};
+  try{ await put('items',rec); }catch(e){ toast('保存できませんでした(容量不足かもしれません)'); return; }
+  const wasEdit=draft.existing; await load(); heroOutfit=null; resetDeck();
+  if(wasEdit){ toast('変更を保存しました'); draft=null; back(); }
+  else { toast('登録しました。続けて撮れます'); draft={id:null,photo:null,cat:rec.cat,sub:'',seasons:[currentSeason()],color:'gray',style:rec.style,memo:'',fav:false,existing:false}; renderEditor(); window.scrollTo(0,0); }
+};
+$('btn-del').onclick=async()=>{
+  if(!confirm('このアイテムを削除しますか？(元に戻せません)')) return;
+  const id=draft.id; await del('items',id);
+  for(const o of outfits) if(o.ids.includes(id)){ o.ids=o.ids.filter(x=>x!==id); await put('outfits',o); }
+  for(const w of wears) if(w.ids.includes(id)){ w.ids=w.ids.filter(x=>x!==id); await put('wears',w); }
+  draft=null; await load(); heroOutfit=null; resetDeck(); toast('削除しました'); back();
+};
+
+// ================= スタイリスト(スワイプで選ぶ) =================
+let sCtx={season:currentSeason(),seasonAuto:true,style:'all',dest:'おまかせ',fixed:null};
+let deck=null, deckSeen=new Set(), swipeHist=[], flying=false;
+function resetDeck(){ deck=null; deckSeen=new Set(); swipeHist=[]; }
+function buildDeck(){
+  const ctx={...sCtx,temp:weather?.max??null};
+  const r=generateCandidates(ctx);
+  if(r.error){ deck={error:true,tops:r.tops,bottoms:r.bottoms}; return; }
+  const pool=r.cands.filter(c=>!deckSeen.has(c.key));
+  const out=[], used=new Set();
+  const take=(c,explore)=>{ used.add(c.key); out.push({...describe(c.ids,ctx),key:c.key,explore:!!explore}); };
+  let i=0;
+  while(out.length<20 && i<pool.length){
+    // 5枚に1枚は「いつもと違う提案」を混ぜて、同じような服ばかりにならないようにする
+    if(out.length%5===4 && pool.length>25){
+      const mid=pool.slice(15,150).filter(c=>!used.has(c.key));
+      if(mid.length){ take(mid[Math.floor(Math.random()*mid.length)],true); continue; }
+    }
+    if(!used.has(pool[i].key)) take(pool[i]);
+    i++;
+  }
+  deck={cards:out};
+}
+function refillDeck(){
+  const keep=deck.cards; keep.forEach(c=>deckSeen.add(c.key));
+  buildDeck(); keep.forEach(c=>deckSeen.delete(c.key));
+  deck = deck.error ? {cards:keep} : {cards:[...keep,...deck.cards]};
+}
+function renderStylist(){
+  const v=$('v-stylist');
+  const temp=weather?.max??null;
+  if(!deck) buildDeck();
+  const wx=weather?WX(weather.code):['🌡️','—'];
+  const d=DESTS[sCtx.dest];
+  let body='';
+  if(deck.error){
+    const miss=[!deck.tops&&'トップス',!deck.bottoms&&'パンツ'].filter(Boolean).join('と');
+    body=`<div class="card empty" style="margin-top:16px">${sCtx.season}に着られる${miss}が登録されていません。<br>登録すると、コーデを提案できるようになります。<div style="height:14px"></div><button class="btn" id="st-add" type="button">${ic('plus')} アイテムを登録</button></div>`;
+  } else {
+    body=`<div class="deck" id="deck"></div>
+      <div class="swipe-btns">
+        <button class="sbtn small" id="sw-undo" type="button" aria-label="1つ戻す">${ic('undo')}</button>
+        <button class="sbtn no" id="sw-no" type="button" aria-label="NO">${ic('x')}</button>
+        <button class="sbtn wear small" id="sw-wear" type="button" aria-label="今日これを着る">${ic('sun')}</button>
+        <button class="sbtn ok" id="sw-ok" type="button" aria-label="OK">${ic('heart')}</button>
+      </div>
+      <p class="swipe-hint">右へスワイプでOK(保存)・左でNO・上で「今日これを着る」<br>カードをタップすると詳しく見られます</p>`;
+  }
+  const wxLabel = temp!=null ? (sCtx.seasonAuto ? `${temp}℃` : `${temp}℃・${sCtx.season}`) : sCtx.season;
+  v.innerHTML=`<div class="stylist-bg">
+    <div class="top" style="background:none"><h1 style="display:flex;align-items:center;gap:6px">${ic('sparkle')} スタイリスト</h1>
+      <button class="icon-btn" id="st-info" aria-label="提案のしくみ">${ic('info')}</button></div>
+    <div class="conds">
+      <button class="cond" id="st-wx" type="button"><span class="e">${wx[0]}</span><span class="t">${temp!=null?'気温':'季節'}<b>${wxLabel}</b></span></button>
+      <button class="cond" id="st-dest" type="button"><span class="e">${d.e}</span><span class="t">行き先<b>${sCtx.dest}</b></span></button>
+      <button class="cond" id="st-style" type="button"><span class="e">❤️</span><span class="t">好み<b>${sCtx.style==='all'?'おまかせ':sCtx.style}</b></span></button>
+    </div>
+    ${sCtx.fixed?`<div class="note" style="margin:12px 0 0;display:flex;align-items:center;gap:8px"><img src="${sCtx.fixed.photo}" style="width:32px;height:40px;object-fit:cover;border-radius:6px" alt=""><span style="flex:1">「${esc(sCtx.fixed.sub||catName(sCtx.fixed.cat))}」を使った提案</span><button class="mini" id="st-unfix" type="button">解除</button></div>`:''}
+    </div>${body}`;
+  const reroll=()=>{ resetDeck(); renderStylist(); };
+  $('st-wx').onclick=()=>pickSheet('季節',[{id:'auto',name:`自動(今は${currentSeason()})`},...SEASONS.map(s=>({id:s,name:s}))],sCtx.seasonAuto?'auto':sCtx.season,id=>{
+    if(id==='auto'){ sCtx.seasonAuto=true; sCtx.season=currentSeason(); } else { sCtx.seasonAuto=false; sCtx.season=id; } reroll(); },
+    weather?`${esc(prefs.loc.name)}の今日の天気:${wx[1]} 最高${weather.max}℃ / 最低${weather.min}℃。気温を見て、上着の有無や厚さを選びます。`:'天気を取得できないときは、季節だけで選びます。');
+  $('st-dest').onclick=()=>pickSheet('行き先',Object.keys(DESTS).map(k=>({id:k,name:DESTS[k].e+' '+k})),sCtx.dest,id=>{sCtx.dest=id;reroll()});
+  $('st-style').onclick=()=>pickSheet('好み',[{id:'all',name:'おまかせ'},...STYLES.map(s=>({id:s,name:s}))],sCtx.style,id=>{sCtx.style=id;reroll()});
+  $('st-info').onclick=()=>openSheet(`<h3>提案のしくみ</h3><p class="note">登録したアイテムの中から、季節に合うものをたくさん組み合わせて点数を付け、点数の高い順にカードで出しています。</p>
+    <p class="note">・色:黒・白・紺・ベージュなどのベーシックな色に、差し色を1つまでが高得点<br>・気温:20℃未満なら上着を入れ、10℃未満ならコートやダウンを優先<br>・行き先:仕事なら革靴やシャツ、ゴルフならポロシャツやスニーカーを優先<br>・ここ3日に着た服は少し控えめに<br>・<b>スワイプで覚えた好み</b>:OKした組み合わせ(服どうし・色どうし・テイストどうし)は点が上がり、NOは少し下がります。古い判断ほど効き目が弱まります<br>・5枚に1枚は「いつもと違う提案」を混ぜています</p>
+    <p class="note">判定した回数:${learn.count}回(OK ${learn.ok} / NO ${learn.no})</p><button class="btn" onclick="closeSheet()">閉じる</button>`);
+  if($('st-unfix')) $('st-unfix').onclick=()=>{ sCtx.fixed=null; reroll(); };
+  if($('st-add')) $('st-add').onclick=()=>openEditor();
+  if(!weather&&!weatherLoading) loadWeather().then(w=>{ if(w&&stack[stack.length-1]==='stylist'&&!swipeHist.length){ resetDeck(); renderStylist(); } });
+  if(deck.error) return;
+  $('sw-no').onclick=()=>flyTop('no');
+  $('sw-ok').onclick=()=>flyTop('ok');
+  $('sw-wear').onclick=()=>flyTop('wear');
+  $('sw-undo').onclick=undoSwipe;
+  renderDeck();
+}
+function renderDeck(){
+  const el=$('deck'); if(!el) return;
+  const cards=deck.cards;
+  if(!cards.length){
+    el.innerHTML=`<div class="card empty" style="height:100%;display:flex;flex-direction:column;justify-content:center">この条件の組み合わせは、すべて見終わりました。<br>条件を変えるか、アイテムを追加してみてください。</div>`;
+    updBtns(); return;
+  }
+  el.innerHTML=cards.slice(0,3).map((o,i)=>`<div class="scard ${i===1?'back1':i===2?'back2':'front'}" style="z-index:${3-i}">
+      <div class="pic">${collage(o.ids)}${o.explore?'<span class="explore">いつもと違う提案</span>':''}<span class="rec">Recommended for you</span>
+        ${i===0?'<span class="stamp ok">OK</span><span class="stamp no">NO</span><span class="stamp wear">今日着る</span>':''}</div>
+      <div class="cap"><b>${esc(o.title)}</b><p>${esc(o.note)}</p></div></div>`).join('');
+  const top=el.querySelector('.scard.front');
+  const st={ok:top.querySelector('.stamp.ok'),no:top.querySelector('.stamp.no'),wear:top.querySelector('.stamp.wear')};
+  const clamp=x=>Math.max(0,Math.min(1,x));
+  let sx=0,sy=0,dx=0,dy=0,down=false;
+  top.onpointerdown=e=>{ if(flying) return; down=true; sx=e.clientX; sy=e.clientY; dx=dy=0; top.style.transition='none'; try{top.setPointerCapture(e.pointerId);}catch(_){} };
+  top.onpointermove=e=>{ if(!down) return; dx=e.clientX-sx; dy=e.clientY-sy;
+    top.style.transform=`translate(${dx}px,${dy}px) rotate(${dx/16}deg)`;
+    st.ok.style.opacity=clamp(dx/90); st.no.style.opacity=clamp(-dx/90); st.wear.style.opacity=Math.abs(dx)<60?clamp(-dy/110):0; };
+  const end=()=>{ if(!down) return; down=false; top.style.transition='';
+    if(dx>90) fly(top,'ok'); else if(dx<-90) fly(top,'no'); else if(dy<-110&&Math.abs(dx)<80) fly(top,'wear');
+    else { top.style.transform=''; Object.values(st).forEach(s=>s.style.opacity=0); if(Math.abs(dx)<6&&Math.abs(dy)<6) openDetail(deck.cards[0]); } };
+  top.onpointerup=end; top.onpointercancel=end;
+  updBtns();
+}
+function updBtns(){
+  const has=deck?.cards?.length>0;
+  ['sw-no','sw-ok','sw-wear'].forEach(id=>{ if($(id)) $(id).disabled=!has; });
+  if($('sw-undo')) $('sw-undo').disabled=!swipeHist.length;
+}
+function flyTop(action){ const top=$('deck')?.querySelector('.scard.front'); if(top&&!flying) fly(top,action); }
+function fly(card,action){
+  flying=true;
+  const s=card.querySelector('.stamp.'+action); if(s) s.style.opacity=1;
+  card.style.transition='transform .32s ease, opacity .32s ease';
+  card.style.transform = action==='ok'?'translate(520px,-40px) rotate(24deg)' : action==='no'?'translate(-520px,-40px) rotate(-24deg)' : 'translate(0,-720px)';
+  card.style.opacity='0';
+  setTimeout(async()=>{ try{ await decide(action); } finally { flying=false; } },300);
+}
+async function decide(action){
+  const o=deck.cards.shift(); if(!o) return;
+  deckSeen.add(o.key);
+  const list=o.ids.map(byId).filter(Boolean);
+  const prev=applyLearn(list, action==='no'?-0.5 : action==='wear'?1.5 : 1);
+  learn.count++; if(action==='no') learn.no++; else learn.ok++;
+  const h={o,action,prev,savedId:null,wearId:null};
+  if(action!=='no' && !savedOf(o)){
+    h.savedId=uid(); await put('outfits',{id:h.savedId,ids:[...o.ids],title:o.title,note:o.note,tags:o.tags,season:o.season,created:Date.now()});
+  }
+  if(action==='wear'){
+    h.wearId=uid(); await put('wears',{id:h.wearId,date:todayKey(),ids:[...o.ids],title:o.title,note:o.note,tags:o.tags,created:Date.now()}); heroOutfit=null;
+  }
+  swipeHist.push(h); if(swipeHist.length>30) swipeHist.shift();
+  saveLearn();
+  if(h.savedId||h.wearId) await load();
+  if(action==='ok') toast('保存しました'); else if(action==='wear') toast('今日のコーデとして記録しました');
+  if(deck.cards.length<5) refillDeck();
+  renderDeck();
+}
+async function undoSwipe(){
+  if(flying) return;
+  const h=swipeHist.pop(); if(!h){ toast('戻せる操作はありません'); return; }
+  for(const [k,v] of Object.entries(h.prev)){ if(v) learn.pairs[k]=v; else delete learn.pairs[k]; }
+  learn.count=Math.max(0,learn.count-1); if(h.action==='no') learn.no=Math.max(0,learn.no-1); else learn.ok=Math.max(0,learn.ok-1);
+  saveLearn();
+  if(h.savedId) await del('outfits',h.savedId);
+  if(h.wearId){ await del('wears',h.wearId); heroOutfit=null; }
+  if(h.savedId||h.wearId) await load();
+  deckSeen.delete(h.o.key); deck.cards.unshift(h.o);
+  renderDeck(); toast('1つ戻しました');
+}
+function pickSheet(title,list,cur,onPick,note){
+  openSheet(`<h3>${title}</h3>${note?`<p class="note" style="margin-top:0">${note}</p>`:''}<div class="chips wrap" id="pk"></div>`);
+  chips($('pk'),list,cur,id=>{ closeSheet(); onPick(id); });
+}
+async function toggleSave(o,onlySave=false){
+  const s=savedOf(o);
+  if(s){ if(onlySave){ toast('保存済みです'); return; } await del('outfits',s.id); await load(); toast('お気に入りから外しました'); return; }
+  await put('outfits',{id:uid(),ids:[...o.ids],title:o.title,note:o.note,tags:o.tags,season:o.season,created:Date.now()});
+  await load(); toast('コーデを保存しました');
+}
+
+// ================= コーデ詳細 =================
+let detailOutfit=null;
+const ORDER=['outer','tops','bottoms','shoes','bag','other'];
+function openDetail(o){ detailOutfit=o; go('detail'); }
+function renderDetail(){
+  const o=detailOutfit, v=$('v-detail');
+  const list=o.ids.map(byId).filter(Boolean).sort((a,b)=>ORDER.indexOf(a.cat)-ORDER.indexOf(b.cat));
+  const saved=savedOf(o), wornToday=wears.some(w=>w.date===todayKey()&&sameIds(w.ids,o.ids));
+  v.innerHTML=`<div class="top center"><button class="icon-btn" data-back aria-label="戻る">${ic('back')}</button><h1>コーディネート詳細</h1>
+      ${navigator.share?`<button class="icon-btn" id="d-share" aria-label="共有">${ic('out')}</button>`:'<span style="width:34px"></span>'}</div>
+    <div class="detail-pic"><div class="main">${collage(o.ids)}</div>
+      <div class="side">${list.map(i=>`<img src="${i.photo}" data-id="${i.id}" alt="${esc(i.sub||catName(i.cat))}">`).join('')}</div></div>
+    <div class="d-title">${esc(o.title)}</div><p class="d-desc">${esc(o.note)}</p>
+    <div class="tags">${(o.tags||[]).map(t=>`<span>${esc(t)}</span>`).join('')}</div>
+    <div class="bar"><button class="btn light ${saved?'on':''}" id="d-fav">${ic('heart')} お気に入り</button>
+      <button class="btn" id="d-wear">${ic('check')} ${wornToday?'今日着た(記録済み)':'今日着たコーデに登録'}</button></div>`;
+  v.querySelectorAll('.side img').forEach(im=>im.onclick=()=>openItem(byId(im.dataset.id)));
+  $('d-fav').onclick=async()=>{ await toggleSave(o); renderDetail(); };
+  $('d-wear').onclick=async()=>{
+    if(wornToday){ toast('今日の記録に入っています'); return; }
+    await put('wears',{id:uid(),date:todayKey(),ids:[...o.ids],title:o.title,note:o.note,tags:o.tags,created:Date.now()});
+    await load(); heroOutfit=null; toast('カレンダーに記録しました'); renderDetail();
+  };
+  if($('d-share')) $('d-share').onclick=()=>navigator.share({title:o.title,text:`${o.title}\n${o.note}`}).catch(()=>{});
+}
+
+// ================= 保存したコーデ一覧 =================
+function renderSaved(){
+  const v=$('v-saved');
+  v.innerHTML=`<div class="top center"><button class="icon-btn" data-back aria-label="戻る">${ic('back')}</button><h1>保存したコーディネート</h1><span style="width:34px"></span></div>
+    ${outfits.length?`<div class="grid" style="grid-template-columns:repeat(2,1fr);gap:10px" id="sv">${outfits.map((o,i)=>`<button class="thumb-outfit" style="width:auto;height:210px" data-i="${i}">${collage(o.ids)}</button>`).join('')}</div>`
+      :`<div class="empty">保存したコーデはまだありません。<br>スタイリストの提案から保存できます。<div style="height:14px"></div><button class="btn" id="sv-go">${ic('sparkle')} 提案を見る</button></div>`}`;
+  v.querySelectorAll('#sv button').forEach(b=>b.onclick=()=>openDetail(outfits[+b.dataset.i]));
+  if($('sv-go')) $('sv-go').onclick=()=>go('stylist');
+}
+
+// ================= カレンダー =================
+let calY=new Date().getFullYear(), calM=new Date().getMonth(), calSel=todayKey();
+function renderCalendar(){
+  const v=$('v-calendar');
+  const start=new Date(calY,calM,1).getDay(), days=new Date(calY,calM+1,0).getDate();
+  const total=Math.ceil((start+days)/7)*7;
+  const worn=new Set(wears.map(w=>w.date));
+  let cells='';
+  for(let i=0;i<total;i++){
+    const dt=new Date(calY,calM,1-start+i), k=dkey(dt), out=dt.getMonth()!==calM;
+    cells+=`<button data-k="${k}" class="${out?'out':''} ${k===todayKey()?'today':''} ${k===calSel?'sel':''} ${dt.getDay()===0&&!out?'sun':''}"><span>${dt.getDate()}</span>${worn.has(k)&&!out?'<i></i>':''}</button>`;
+  }
+  const dayW=wears.filter(w=>w.date===calSel);
+  v.innerHTML=`<div class="top"><h1>カレンダー</h1></div>
+    <div class="card" style="padding:12px 8px">
+      <div class="cal-head"><button class="icon-btn" id="cal-prev" aria-label="前の月">${ic('back')}</button><b>${calY}年${calM+1}月</b><button class="icon-btn" id="cal-next" aria-label="次の月">${ic('chev')}</button></div>
+      <div class="cal">${WD.map(w=>`<div class="w">${w}</div>`).join('')}${cells}</div>
+    </div>
+    <div class="sec-head"><h2>${dLabel(calSel)}のコーデ</h2></div>
+    <div id="cal-day">${dayW.length?dayW.map((w,i)=>{ const o={...describe(w.ids),...pickFields(w)}; return `<div class="card day-card"><div class="pic">${collage(w.ids)}</div>
+        <div class="body"><b>${esc(o.title)}</b><small>${esc(w.ids.map(byId).filter(Boolean).map(x=>x.sub||catName(x.cat)).join(' + '))}</small>
+        <div class="acts"><button class="mini" data-del="${w.id}">${ic('trash')} 消す</button><button class="mini" data-open="${i}">詳細を見る ${ic('chev')}</button></div></div></div>`; }).join('')
+      :`<div class="card" style="padding:18px;text-align:center"><p class="note" style="margin:0 0 12px">この日の記録はありません。</p>
+        <button class="btn light" id="cal-add">${ic('plus')} 保存したコーデから記録する</button></div>`}</div>`;
+  $('cal-prev').onclick=()=>{ calM--; if(calM<0){calM=11;calY--;} renderCalendar(); };
+  $('cal-next').onclick=()=>{ calM++; if(calM>11){calM=0;calY++;} renderCalendar(); };
+  v.querySelectorAll('.cal button').forEach(b=>b.onclick=()=>{ calSel=b.dataset.k; const [y,m]=calSel.split('-').map(Number); calY=y; calM=m-1; renderCalendar(); });
+  v.querySelectorAll('[data-open]').forEach(b=>b.onclick=()=>{ const w=dayW[+b.dataset.open]; openDetail({...describe(w.ids),...pickFields(w)}); });
+  v.querySelectorAll('[data-del]').forEach(b=>b.onclick=async()=>{ if(!confirm('この日の記録を消しますか？')) return; await del('wears',b.dataset.del); await load(); heroOutfit=null; renderCalendar(); });
+  if($('cal-add')) $('cal-add').onclick=()=>{
+    if(!outfits.length){ toast('先にスタイリストでコーデを保存してください'); return; }
+    openSheet(`<h3>${dLabel(calSel)}に着たコーデ</h3><div class="pick-list">${outfits.map((o,i)=>`<button data-i="${i}"><div class="pic">${collage(o.ids)}</div><div><b style="font-size:14px">${esc(o.title)}</b><div class="note" style="font-size:12px">${esc(o.note)}</div></div></button>`).join('')}</div>`);
+    document.querySelectorAll('.pick-list button').forEach(b=>b.onclick=async()=>{ const o=outfits[+b.dataset.i];
+      await put('wears',{id:uid(),date:calSel,ids:[...o.ids],title:o.title,note:o.note,tags:o.tags,created:Date.now()});
+      closeSheet(); await load(); heroOutfit=null; toast('記録しました'); renderCalendar(); });
+  };
+}
+
+// ================= マイページ =================
+function renderMypage(){
+  const v=$('v-mypage'), now=new Date();
+  const monthKey=`${now.getFullYear()}-${pad(now.getMonth()+1)}`;
+  const monthWears=wears.filter(w=>w.date.startsWith(monthKey)).length;
+  // 過去13週の着用回数
+  const weeks=[]; const today=new Date(); today.setHours(0,0,0,0);
+  for(let i=12;i>=0;i--){ const end=new Date(today); end.setDate(end.getDate()-i*7); const st=new Date(end); st.setDate(st.getDate()-6);
+    const n=wears.filter(w=>{ const [y,m,d]=w.date.split('-').map(Number); const t=new Date(y,m-1,d); return t>=st&&t<=end; }).length; weeks.push({n,st}); }
+  const max=Math.max(1,...weeks.map(w=>w.n));
+  const labels=[...new Set(weeks.map(w=>w.st.getMonth()+1))].slice(-3);
+  const name=prefs.name||'ゲスト';
+  const likes=learnedPairs(1), dislikes=learnedPairs(-1);
+  const pairHTML=p=>`<div class="pair">${p.ids.map(id=>`<img src="${byId(id).photo}" alt="">`).join('<span>×</span>')}</div>`;
+  v.innerHTML=`<div class="top center"><span style="width:34px"></span><h1>マイページ</h1><span style="width:34px"></span></div>
+    <div class="card profile"><button class="avatar" id="mp-av" aria-label="写真を変える">${prefs.avatar?`<img src="${prefs.avatar}" alt="">`:esc(name.slice(0,1))}</button>
+      <div style="flex:1;min-width:0"><b>${esc(name)}</b><small>${esc(prefs.bio)}</small></div>
+      <button class="mini" id="mp-edit">編集</button></div>
+    <div class="card stats"><div>${ic('hanger')}<small>登録アイテム</small><b>${items.length}<em>点</em></b></div>
+      <div>${ic('calendar')}<small>今月の着用</small><b>${monthWears}<em>回</em></b></div>
+      <div>${ic('bookmark')}<small>保存コーデ</small><b>${outfits.length}<em>件</em></b></div></div>
+    <div class="card chart"><div class="h">着用履歴グラフ<small>過去3ヶ月(週ごと)</small></div>
+      <div class="bars">${weeks.map((w,i)=>`<div class="${i===12?'now':''}" style="height:${w.n/max*100}%" title="${w.n}回"></div>`).join('')}</div>
+      <div class="blabels">${labels.map(m=>`<span>${m}月</span>`).join('')}</div></div>
+    <div class="card chart"><div class="h">覚えた好み<small>判定 ${learn.count}回</small></div>
+      ${likes.length?`<div class="note" style="margin:0 0 6px">よく選ぶ組み合わせ</div><div class="pairs">${likes.map(pairHTML).join('')}</div>`
+        :`<p class="note" style="margin:0">スタイリストでカードを左右にスワイプすると、好みの組み合わせを覚えてここに表示します。</p>`}
+      ${dislikes.length?`<div class="note" style="margin:12px 0 6px">あまり選ばない組み合わせ</div><div class="pairs">${dislikes.map(pairHTML).join('')}</div>`:''}
+      ${learn.count?`<div style="margin-top:12px;text-align:right"><button class="mini" id="mp-reset">好みをリセット</button></div>`:''}
+    </div>
+    <div class="card menu">
+      <button id="mp-loc">${ic('pin')}<span>天気の地域</span><small>${esc(prefs.loc.name)}</small>${ic('chev')}</button>
+      <button id="mp-export">${ic('out')}<span>データを書き出す(控え)</span>${ic('chev')}</button>
+      <button id="mp-import">${ic('inn')}<span>データを読み込む</span>${ic('chev')}</button>
+      <button id="mp-help">${ic('help')}<span>ヘルプ・使い方</span>${ic('chev')}</button>
+      <button id="mp-about">${ic('info')}<span>アプリについて</span>${ic('chev')}</button>
+    </div>`;
+  $('mp-av').onclick=()=>$('avatarFile').click();
+  $('mp-edit').onclick=()=>{ const n=prompt('表示する名前',prefs.name||''); if(n===null) return; const b=prompt('ひとこと',prefs.bio||''); prefs.name=n.trim(); if(b!==null) prefs.bio=b.trim(); savePrefs(); renderMypage(); };
+  $('mp-loc').onclick=()=>{
+    openSheet(`<h3>天気の地域</h3><p class="note" style="margin-top:0">今の地域:${esc(prefs.loc.name)}。スタイリストが、この地域の今日の気温を見て服を選びます。</p>
+      <div class="row"><button class="btn" id="loc-here">${ic('pin')} 現在地にする</button><button class="btn light" id="loc-tokyo">東京にする</button></div>`);
+    $('loc-tokyo').onclick=()=>setLoc({name:'東京',lat:35.68,lon:139.76});
+    $('loc-here').onclick=()=>{
+      if(!navigator.geolocation){ toast('この端末では現在地が使えません'); return; }
+      navigator.geolocation.getCurrentPosition(p=>setLoc({name:'現在地',lat:+p.coords.latitude.toFixed(2),lon:+p.coords.longitude.toFixed(2)}),()=>toast('現在地を取得できませんでした'),{timeout:10000});
+    };
+  };
+  if($('mp-reset')) $('mp-reset').onclick=()=>{ if(!confirm('覚えた好みをすべて消しますか？(保存したコーデは消えません)')) return; learn={id:'learn',pairs:{},count:0,ok:0,no:0}; saveLearn(); resetDeck(); renderMypage(); toast('好みをリセットしました'); };
+  $('mp-export').onclick=exportData;
+  $('mp-import').onclick=()=>$('importFile').click();
+  $('mp-help').onclick=()=>openSheet(`<h3>使い方</h3><p class="note">1. クローゼットの ＋ から、服・靴・バッグを写真で登録します(季節・色・テイストも選びます)。<br>
+    2. スタイリストで、気温・行き先・好みに合わせたコーデがカードで出てきます。右へスワイプでOK(保存)、左でNO、上で「今日これを着る」。スワイプするほど好みを覚えて、提案が好みに近づきます。<br>
+    3. 着た日はコーデ詳細の「今日着たコーデに登録」を押すと、カレンダーに記録されます。<br>
+    4. データはこのスマホの中だけに保存されます。ときどき「データを書き出す」で控えを取っておくと安心です。</p><button class="btn" onclick="closeSheet()">閉じる</button>`);
+  $('mp-about').onclick=()=>openSheet(`<h3>My Wardrobe</h3><p class="note">手持ちの服を写真で管理して、コーデを提案するアプリです。<br>コーデの提案は、色の相性・季節・気温・行き先のルールで選んでいます(AIは使っていません)。<br>天気は Open-Meteo の無料データを使っています。</p><button class="btn" onclick="closeSheet()">閉じる</button>`);
+}
+function setLoc(loc){ prefs.loc=loc; savePrefs(); weather=null; weatherLoading=null; resetDeck(); heroOutfit=null; closeSheet(); toast(`天気の地域を「${loc.name}」にしました`); loadWeather(); renderMypage(); }
+$('avatarFile').onchange=async e=>{ const f=e.target.files[0]; e.target.value=''; if(!f) return;
+  try{ const {dataUrl}=await processImage(f,240); prefs.avatar=dataUrl; savePrefs(); renderMypage(); }catch(err){ toast('写真を読み込めませんでした'); } };
+function exportData(){
+  const blob=new Blob([JSON.stringify({app:'closet',version:3,items,outfits,wears,prefs,learn})],{type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`my-wardrobe-${todayKey()}.json`; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),2000);
+}
+$('importFile').onchange=async e=>{
+  const f=e.target.files[0]; e.target.value=''; if(!f) return;
+  try{ const d=JSON.parse(await f.text()); if(d.app!=='closet') throw 0;
+    for(const i of d.items||[]) await put('items',i); for(const o of d.outfits||[]) await put('outfits',o); for(const w of d.wears||[]) await put('wears',w);
+    if(d.prefs){ Object.assign(prefs,d.prefs); savePrefs(); }
+    if(d.learn&&d.learn.pairs){ learn={...d.learn,id:'learn'}; saveLearn(); }
+    await load(); heroOutfit=null; resetDeck(); toast(`${(d.items||[]).length}点を読み込みました`); renderMypage();
+  }catch(err){ toast('このファイルは読み込めません'); }
+};
+
+// ================= 起動 =================
+openDB().then(load).then(()=>{ go('home'); }).catch(()=>{
+  document.body.innerHTML='<div class="empty" style="padding-top:120px">このブラウザではデータを保存できません。<br>プライベートモードを解除してお試しください。</div>';
+});
+</script>
+</body>
+</html>
