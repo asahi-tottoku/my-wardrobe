@@ -222,6 +222,36 @@ input[type=text]{width:100%;border:1px solid var(--line);border-radius:12px;padd
 .pick-list .pic{width:64px;height:76px;border-radius:10px;overflow:hidden;flex:none}
 .toast{position:fixed;left:50%;bottom:96px;transform:translateX(-50%);background:var(--dark);color:#fff;padding:10px 18px;border-radius:999px;font-size:14px;z-index:40;opacity:0;transition:opacity .2s;pointer-events:none;white-space:nowrap}
 .toast.show{opacity:1}
+
+/* ---- 撮影ガイド・カメラ・枠合わせ ---- */
+.photo-drop{position:relative}
+.photo-drop .ph-guide{position:absolute;inset:7%}
+.photo-drop .guide path{fill:#f7f4ef;stroke:#cdbfab;stroke-width:2;stroke-dasharray:7 6;vector-effect:non-scaling-stroke}
+.photo-drop .ph-label{position:relative;z-index:1;background:rgba(255,255,255,.9);color:var(--ink);border-radius:999px;padding:7px 14px;font-size:13px;box-shadow:var(--shadow)}
+.overlay{position:fixed;inset:0;z-index:50;background:#111;color:#fff;display:flex;flex-direction:column;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none}
+.overlay video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.ov-top{position:relative;z-index:3;display:flex;align-items:center;gap:10px;padding:12px 14px;padding-top:calc(12px + env(safe-area-inset-top))}
+.ov-x{width:38px;height:38px;border-radius:50%;border:0;background:rgba(255,255,255,.18);color:#fff;font-size:16px;flex:none}
+.ov-tip{flex:1;font-size:13px;line-height:1.55;background:rgba(0,0,0,.5);border-radius:12px;padding:8px 12px}
+.ov-center{position:relative;z-index:2;flex:1;display:flex;align-items:center;justify-content:center;min-height:0}
+.frame{position:relative;width:min(80vw,calc((100vh - 290px)*.75));aspect-ratio:3/4}
+.frame .mask{position:absolute;inset:0;border:2px solid rgba(255,255,255,.95);border-radius:14px;box-shadow:0 0 0 100vmax rgba(0,0,0,.5);pointer-events:none;z-index:2}
+.frame canvas{position:absolute;left:0;top:0;transform-origin:0 0;z-index:1;max-width:none}
+.frame .guide{position:absolute;inset:0;width:100%;height:100%;z-index:3;pointer-events:none}
+.frame .guide path{fill:rgba(255,255,255,.07);stroke:rgba(255,255,255,.92);stroke-width:2.5;stroke-dasharray:9 7;stroke-linejoin:round;vector-effect:non-scaling-stroke}
+.ov-bottom{position:relative;z-index:3;padding:8px 14px;padding-bottom:calc(18px + env(safe-area-inset-bottom))}
+.ov-chips{justify-content:flex-start;margin:0 -14px;padding-left:14px;padding-right:14px}
+.ov-chips .chip{background:rgba(255,255,255,.18);color:#fff}
+.ov-chips .chip.on{background:#fff;color:#222}
+.ov-btns{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:4px}
+.ov-sub{border:0;background:rgba(255,255,255,.18);color:#fff;border-radius:999px;padding:10px 12px;font-size:13px;min-width:96px;white-space:nowrap}
+.shutter{width:72px;height:72px;border-radius:50%;border:4px solid #fff;background:rgba(255,255,255,.88);box-shadow:0 0 0 3px rgba(0,0,0,.35);padding:0;flex:none}
+.shutter:active{transform:scale(.92)}
+.shutter:disabled{opacity:.4}
+.ov-msg{position:absolute;left:24px;right:24px;top:36%;z-index:4;background:rgba(24,24,24,.94);border-radius:16px;padding:18px;font-size:14px;line-height:1.7;text-align:center}
+.zoom{width:100%;accent-color:#fff;margin:2px 0 8px}
+#crop .ov-center{cursor:grab}
+#crop-frame{background:#f3f0ea;border-radius:14px}
 </style>
 </head>
 <body>
@@ -250,14 +280,15 @@ input[type=text]{width:100%;border:1px solid var(--line);border-radius:12px;padd
   </div>
   <input type="file" id="file" accept="image/*" capture="environment" class="hidden">
   <input type="file" id="file2" accept="image/*" class="hidden">
-  <button class="photo-drop" id="photo" type="button"></button>
+  <label class="f" style="margin-top:4px">ジャンル(先に選ぶと、撮影の枠がその形になります)</label>
+  <div class="chips wrap" id="e-cat"></div>
+  <button class="photo-drop" id="photo" type="button" style="margin-top:6px"></button>
   <div class="row" style="margin-top:10px">
-    <button class="btn light" id="btn-cam" type="button">カメラで撮る</button>
+    <button class="btn" id="btn-cam" type="button">枠に合わせて撮る</button>
     <button class="btn light" id="btn-lib" type="button">写真から選ぶ</button>
   </div>
-  <p class="hint">白い壁や床の前で、服を広げて撮ると一覧がきれいに並びます。</p>
-  <label class="f">ジャンル</label>
-  <div class="chips wrap" id="e-cat"></div>
+  <button class="btn light hidden" id="btn-adjust" type="button" style="margin-top:8px">位置・大きさを調整</button>
+  <p class="hint" id="photo-tip"></p>
   <label class="f">種類</label>
   <div class="chips wrap" id="e-sub"></div>
   <label class="f">季節(いくつでも)</label>
@@ -283,6 +314,24 @@ input[type=text]{width:100%;border:1px solid var(--line);border-radius:12px;padd
   <button data-v="mypage"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-4.5 4-6.5 8-6.5s7 2 8 6.5"/></svg>マイページ</button>
 </nav>
 
+<div class="overlay hidden" id="cam">
+  <video id="cam-video" playsinline muted autoplay></video>
+  <div class="ov-top"><button class="ov-x" id="cam-close" type="button" aria-label="閉じる">✕</button><div class="ov-tip" id="cam-tip"></div></div>
+  <div class="ov-center"><div class="frame" id="cam-frame"><div class="mask"></div><div id="cam-guide"></div></div></div>
+  <div class="ov-msg hidden" id="cam-msg"></div>
+  <div class="ov-bottom">
+    <div class="chips ov-chips" id="cam-cats"></div>
+    <div class="ov-btns"><button class="ov-sub" id="cam-lib" type="button">写真から選ぶ</button><button class="shutter" id="cam-shot" type="button" aria-label="撮影"></button><button class="ov-sub" id="cam-native" type="button">標準カメラ</button></div>
+  </div>
+</div>
+<div class="overlay hidden" id="crop">
+  <div class="ov-top"><button class="ov-x" id="crop-cancel" type="button" aria-label="やめる">✕</button><div class="ov-tip" id="crop-tip"></div></div>
+  <div class="ov-center" id="crop-stage"><div class="frame" id="crop-frame"><canvas id="crop-img"></canvas><div class="mask"></div><div id="crop-guide"></div></div></div>
+  <div class="ov-bottom">
+    <input type="range" id="crop-zoom" class="zoom" min="0" max="100" aria-label="拡大縮小">
+    <div class="ov-btns"><button class="ov-sub" id="crop-fit" type="button">枠に合わせる</button><button class="btn" id="crop-ok" type="button" style="width:auto;padding:13px 34px;background:#fff;color:#222">決定</button></div>
+  </div>
+</div>
 <div class="sheet hidden" id="sheet"><div class="inner" id="sheet-inner"></div></div>
 <div class="toast" id="toast"></div>
 <input type="file" id="importFile" accept="application/json,.json" class="hidden">
@@ -678,7 +727,10 @@ function openEditor(item){
 function renderEditor(){
   if(!draft) draft={id:null,photo:null,cat:'tops',sub:'',seasons:[currentSeason()],color:'gray',style:'カジュアル',memo:'',fav:false,existing:false};
   $('add-title').textContent=draft.existing?'アイテムを編集':'アイテムを登録';
-  $('photo').innerHTML = draft.photo?`<img src="${draft.photo}" alt="">`:`<svg class="i" viewBox="0 0 24 24" style="width:42px;height:42px;stroke-width:1.3"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>タップして写真を撮る`;
+  $('photo').innerHTML = draft.photo?`<img src="${draft.photo}" alt="">`:`<div class="ph-guide">${guideSVG(draft.cat)}</div><span class="ph-label">タップして撮影(形の枠が出ます)</span>`;
+  $('btn-adjust').classList.toggle('hidden',!draft.photo);
+  $('btn-cam').textContent=draft.photo?'撮り直す':'枠に合わせて撮る';
+  $('photo-tip').textContent='撮り方:'+(GUIDES[draft.cat]||GUIDES.other).tip+'。白い壁や床など、無地の背景がおすすめです。';
   chips($('e-cat'),CATS,draft.cat,id=>{draft.cat=id;draft.sub='';renderEditor()});
   chips($('e-sub'),CATS.find(c=>c.id===draft.cat).subs.map(s=>({id:s,name:s})),draft.sub,id=>{draft.sub=draft.sub===id?'':id;renderEditor()});
   chips($('e-season'),SEASONS.map(s=>({id:s,name:s})),draft.seasons,id=>{
@@ -694,11 +746,13 @@ function renderEditor(){
   $('btn-save').textContent=draft.existing?'変更を保存':'保存する';
 }
 $('e-memo').oninput=e=>{ if(draft) draft.memo=e.target.value; };
-$('photo').onclick=$('btn-cam').onclick=()=>$('file').click();
+$('photo').onclick=()=>{ if(draft.photo) openCrop(draft._src||draft.photo, draft._src?draft._rect:null); else openCamera(); };
+$('btn-cam').onclick=()=>openCamera();
+$('btn-adjust').onclick=()=>openCrop(draft._src||draft.photo, draft._src?draft._rect:null);
 $('btn-lib').onclick=()=>$('file2').click();
 $('file').onchange=$('file2').onchange=async e=>{
   const f=e.target.files[0]; e.target.value=''; if(!f) return;
-  try{ const {dataUrl,color}=await processImage(f,900); draft.photo=dataUrl; draft.color=color; renderEditor(); }
+  try{ const src=await loadSource(f); openCrop(src,null); }
   catch(err){ toast('写真を読み込めませんでした'); }
 };
 function processImage(file,max){
@@ -718,6 +772,149 @@ function guessColor(ctx,w,h){
     votes[best]=(votes[best]||0)+1; }
   return Object.entries(votes).sort((a,b)=>b[1]-a[1])[0]?.[0]||'gray';
 }
+// ================= 撮影ガイド(形の枠)・アプリ内カメラ・枠合わせ =================
+const GUIDES={
+  tops:   {d:'M95 62 L128 46 Q150 72 172 46 L205 62 L266 112 L240 152 L214 132 L214 348 L86 348 L86 132 L60 152 L34 112 Z', tip:'床やベッドに広げて真上から。袖も広げて、点線に合わせて枠いっぱいに'},
+  outer:  {d:'M100 42 L134 30 Q150 52 166 30 L200 42 L256 92 L264 300 L232 306 L218 152 L220 376 L80 376 L82 152 L68 306 L36 300 L44 92 Z', tip:'ハンガーに掛けて正面から、または広げて真上から'},
+  bottoms:{d:'M102 34 L198 34 L214 372 L162 372 L150 122 L138 372 L86 372 Z', tip:'たたまずに縦にまっすぐ置いて、真上から'},
+  shoes:  {d:'M36 262 L36 206 Q60 194 92 198 L142 170 Q162 164 172 186 L204 212 Q254 216 266 242 L266 264 Q150 274 36 262 Z', tip:'片方を真横から。かかとを左、つま先を右に'},
+  bag:    {d:'M58 156 H242 V346 H58 Z M112 156 Q112 84 150 84 Q188 84 188 156', tip:'正面から。持ち手も枠に入れて'},
+  other:  {d:'M70 90 H230 Q250 90 250 110 V290 Q250 310 230 310 H70 Q50 310 50 290 V110 Q50 90 70 90 Z', tip:'無地の背景の上に置いて、真上から'},
+};
+const guideSVG=cat=>`<svg class="guide" viewBox="0 0 300 400" preserveAspectRatio="xMidYMid meet"><path d="${(GUIDES[cat]||GUIDES.other).d}"/></svg>`;
+const OUT_W=900, OUT_H=1200, PHOTO_BG='#f3f0ea';
+
+// 枠で切り取った写真を下書きに入れる(元の画像は「位置を調整」のために残す)
+function setPhoto(cv, src, rect){
+  draft.photo=cv.toDataURL('image/jpeg',0.82);
+  draft.color=guessColor(cv.getContext('2d'),OUT_W,OUT_H);
+  draft._src=src; draft._rect=rect;
+  renderEditor();
+}
+function loadSource(file){
+  return new Promise((res,rej)=>{
+    const url=URL.createObjectURL(file), img=new Image();
+    img.onload=()=>{ const r=Math.min(1,2400/Math.max(img.naturalWidth,img.naturalHeight));
+      const c=document.createElement('canvas'); c.width=Math.round(img.naturalWidth*r); c.height=Math.round(img.naturalHeight*r);
+      c.getContext('2d').drawImage(img,0,0,c.width,c.height); URL.revokeObjectURL(url); res(c); };
+    img.onerror=()=>{ URL.revokeObjectURL(url); rej(); };
+    img.src=url;
+  });
+}
+const imgFromURL=u=>new Promise((res,rej)=>{ const i=new Image(); i.onload=()=>res(i); i.onerror=rej; i.src=u; });
+
+// ---- アプリ内カメラ ----
+let camStream=null;
+function renderCamUI(){
+  $('cam-guide').innerHTML=guideSVG(draft.cat);
+  $('cam-tip').textContent=(GUIDES[draft.cat]||GUIDES.other).tip;
+  chips($('cam-cats'),CATS,draft.cat,id=>{ draft.cat=id; draft.sub=''; renderCamUI(); renderEditor(); });
+}
+async function openCamera(){
+  renderCamUI();
+  $('cam-msg').classList.add('hidden');
+  $('cam-shot').disabled=true;
+  $('cam').classList.remove('hidden');
+  if(!navigator.mediaDevices?.getUserMedia){ camFail('このブラウザでは、アプリ内のカメラが使えません。'); return; }
+  try{
+    camStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1920},height:{ideal:1440}},audio:false});
+    if($('cam').classList.contains('hidden')){ stopCam(); return; }
+    const v=$('cam-video'); v.srcObject=camStream; await v.play().catch(()=>{});
+    $('cam-shot').disabled=false;
+  }catch(e){ camFail('カメラを使えませんでした。ブラウザの設定でカメラを許可するか、標準のカメラで撮ってください。'); }
+}
+function camFail(msg){
+  const m=$('cam-msg');
+  m.innerHTML=`${msg}<div style="height:12px"></div><button class="btn light" id="cam-native2" type="button">標準のカメラで撮る</button>`;
+  m.classList.remove('hidden');
+  $('cam-native2').onclick=()=>{ closeCamera(); $('file').click(); };
+}
+function stopCam(){ if(camStream){ camStream.getTracks().forEach(t=>t.stop()); camStream=null; } }
+function closeCamera(){ stopCam(); $('cam-video').srcObject=null; $('cam').classList.add('hidden'); }
+$('cam-close').onclick=closeCamera;
+$('cam-native').onclick=()=>{ closeCamera(); $('file').click(); };
+$('cam-lib').onclick=()=>{ closeCamera(); $('file2').click(); };
+$('cam-shot').onclick=()=>{
+  const v=$('cam-video'); if(!camStream||!v.videoWidth) return;
+  const vr=v.getBoundingClientRect(), fr=$('cam-frame').getBoundingClientRect();
+  // 画面に映っている範囲(object-fit:cover)から、枠の部分を元の映像の座標に直す
+  const s=Math.max(vr.width/v.videoWidth, vr.height/v.videoHeight);
+  const ox=(vr.width-v.videoWidth*s)/2, oy=(vr.height-v.videoHeight*s)/2;
+  const rect={sx:(fr.left-vr.left-ox)/s, sy:(fr.top-vr.top-oy)/s, sw:fr.width/s, sh:fr.height/s};
+  const full=document.createElement('canvas'); full.width=v.videoWidth; full.height=v.videoHeight; full.getContext('2d').drawImage(v,0,0);
+  const cv=document.createElement('canvas'); cv.width=OUT_W; cv.height=OUT_H; const ctx=cv.getContext('2d');
+  ctx.fillStyle=PHOTO_BG; ctx.fillRect(0,0,OUT_W,OUT_H);
+  ctx.drawImage(full,rect.sx,rect.sy,rect.sw,rect.sh,0,0,OUT_W,OUT_H);
+  closeCamera();
+  setPhoto(cv,full,rect);
+  toast('撮影しました。ずれていたら「位置・大きさを調整」で直せます');
+};
+
+// ---- 枠合わせ(指で動かす・2本指で拡大縮小) ----
+let crop=null;
+async function openCrop(src, rect){
+  try{ if(typeof src==='string') src=await imgFromURL(src); }catch(e){ toast('写真を読み込めませんでした'); return; }
+  const iw=src.naturalWidth||src.width, ih=src.naturalHeight||src.height;
+  $('crop-guide').innerHTML=guideSVG(draft.cat);
+  $('crop-tip').textContent='指で動かす・2本指で広げて、服を点線の形に合わせてください';
+  $('crop').classList.remove('hidden');
+  const view=$('crop-img'); view.width=iw; view.height=ih; view.style.width=iw+'px'; view.style.height=ih+'px';
+  view.getContext('2d').drawImage(src,0,0);
+  const fr=$('crop-frame').getBoundingClientRect();
+  const cover=Math.max(fr.width/iw, fr.height/ih), contain=Math.min(fr.width/iw, fr.height/ih);
+  crop={src,iw,ih,fw:fr.width,fh:fr.height,min:contain*0.5,max:cover*6,cover,s:cover,tx:0,ty:0};
+  if(rect){ crop.s=fr.width/rect.sw; crop.tx=-rect.sx*crop.s; crop.ty=-rect.sy*crop.s; }
+  else fitCrop();
+  applyCrop();
+}
+function fitCrop(){ crop.s=crop.cover; crop.tx=(crop.fw-crop.iw*crop.s)/2; crop.ty=(crop.fh-crop.ih*crop.s)/2; }
+function applyCrop(){
+  $('crop-img').style.transform=`translate(${crop.tx}px,${crop.ty}px) scale(${crop.s})`;
+  $('crop-zoom').value=Math.round(Math.log(crop.s/crop.min)/Math.log(crop.max/crop.min)*100);
+}
+// 枠の中の点 (cx,cy) を動かさずに拡大率を変える
+function zoomAt(ns,cx,cy){
+  ns=Math.max(crop.min,Math.min(crop.max,ns));
+  const ix=(cx-crop.tx)/crop.s, iy=(cy-crop.ty)/crop.s;
+  crop.s=ns; crop.tx=cx-ix*ns; crop.ty=cy-iy*ns; applyCrop();
+}
+(()=>{
+  const stage=$('crop-stage'), pts=new Map(); let g=null;
+  const frameXY=p=>{ const fr=$('crop-frame').getBoundingClientRect(); return {x:p.x-fr.left,y:p.y-fr.top}; };
+  const snap=()=>{ const a=[...pts.values()];
+    if(a.length===1) return {n:1,x:a[0].x,y:a[0].y,tx:crop.tx,ty:crop.ty};
+    if(a.length>=2){ const c={x:(a[0].x+a[1].x)/2,y:(a[0].y+a[1].y)/2};
+      return {n:2,c:frameXY(c),d:Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y)||1,s:crop.s,tx:crop.tx,ty:crop.ty}; }
+    return null; };
+  stage.onpointerdown=e=>{ if(!crop) return; try{stage.setPointerCapture(e.pointerId);}catch(_){} pts.set(e.pointerId,{x:e.clientX,y:e.clientY}); g=snap(); };
+  stage.onpointermove=e=>{ if(!crop||!pts.has(e.pointerId)||!g) return; pts.set(e.pointerId,{x:e.clientX,y:e.clientY});
+    const a=[...pts.values()];
+    if(g.n===1){ crop.tx=g.tx+(a[0].x-g.x); crop.ty=g.ty+(a[0].y-g.y); applyCrop(); }
+    else if(a.length>=2){
+      const c=frameXY({x:(a[0].x+a[1].x)/2,y:(a[0].y+a[1].y)/2}), d=Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y);
+      const ns=Math.max(crop.min,Math.min(crop.max,g.s*d/g.d));
+      const ix=(g.c.x-g.tx)/g.s, iy=(g.c.y-g.ty)/g.s;
+      crop.s=ns; crop.tx=c.x-ix*ns; crop.ty=c.y-iy*ns; applyCrop();
+    } };
+  const up=e=>{ pts.delete(e.pointerId); g=crop?snap():null; };
+  stage.onpointerup=up; stage.onpointercancel=up;
+  stage.addEventListener('wheel',e=>{ if(!crop) return; e.preventDefault(); const p=frameXY({x:e.clientX,y:e.clientY}); zoomAt(crop.s*Math.exp(-e.deltaY*0.0015),p.x,p.y); },{passive:false});
+  $('crop-zoom').oninput=e=>{ if(!crop) return; const ns=crop.min*Math.pow(crop.max/crop.min,e.target.value/100); zoomAt(ns,crop.fw/2,crop.fh/2); };
+})();
+function closeCrop(){ $('crop').classList.add('hidden'); crop=null; }
+$('crop-cancel').onclick=closeCrop;
+$('crop-fit').onclick=()=>{ if(crop){ fitCrop(); applyCrop(); } };
+$('crop-ok').onclick=()=>{
+  if(!crop) return;
+  const k=OUT_W/crop.fw;
+  const cv=document.createElement('canvas'); cv.width=OUT_W; cv.height=OUT_H; const ctx=cv.getContext('2d');
+  ctx.fillStyle=PHOTO_BG; ctx.fillRect(0,0,OUT_W,OUT_H);
+  ctx.drawImage(crop.src,crop.tx*k,crop.ty*k,crop.iw*crop.s*k,crop.ih*crop.s*k);
+  const rect={sx:-crop.tx/crop.s, sy:-crop.ty/crop.s, sw:crop.fw/crop.s, sh:crop.fh/crop.s};
+  const src=crop.src; closeCrop();
+  setPhoto(cv,src,rect);
+};
+
 $('btn-save').onclick=async()=>{
   if(!draft.photo){ toast('先に写真を撮ってください'); return; }
   if(!draft.seasons.length){ toast('季節を1つ以上選んでください'); return; }
@@ -1020,7 +1217,7 @@ function renderMypage(){
   if($('mp-reset')) $('mp-reset').onclick=()=>{ if(!confirm('覚えた好みをすべて消しますか？(保存したコーデは消えません)')) return; learn={id:'learn',pairs:{},count:0,ok:0,no:0}; saveLearn(); resetDeck(); renderMypage(); toast('好みをリセットしました'); };
   $('mp-export').onclick=exportData;
   $('mp-import').onclick=()=>$('importFile').click();
-  $('mp-help').onclick=()=>openSheet(`<h3>使い方</h3><p class="note">1. クローゼットの ＋ から、服・靴・バッグを写真で登録します(季節・色・テイストも選びます)。<br>
+  $('mp-help').onclick=()=>openSheet(`<h3>使い方</h3><p class="note">1. クローゼットの ＋ から、服・靴・バッグを写真で登録します。先にジャンルを選んで「枠に合わせて撮る」を押すと、カメラにその形の点線が出ます。点線に合わせて撮ると、一覧やコーデの絵がきれいにそろいます。<br>
     2. スタイリストで、気温・行き先・好みに合わせたコーデがカードで出てきます。右へスワイプでOK(保存)、左でNO、上で「今日これを着る」。スワイプするほど好みを覚えて、提案が好みに近づきます。<br>
     3. 着た日はコーデ詳細の「今日着たコーデに登録」を押すと、カレンダーに記録されます。<br>
     4. データはこのスマホの中だけに保存されます。ときどき「データを書き出す」で控えを取っておくと安心です。</p><button class="btn" onclick="closeSheet()">閉じる</button>`);
