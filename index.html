@@ -279,6 +279,10 @@ input[type=text]{width:100%;border:1px solid var(--line);border-radius:12px;padd
 .rare-i span{font-size:11px;color:var(--sub)}
 .burst{display:flex;align-items:center;gap:10px;font-size:14px;margin:0 0 12px;padding:12px;background:#fff;border:1px solid var(--line);border-radius:12px;line-height:1.5}
 .burst input{width:20px;height:20px;accent-color:var(--dark);flex:none}
+.help-sec{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:10px}
+.help-sec b{font-size:14px}
+.help-sec .note{margin:6px 0 0}
+.sheet a{color:#6b5a3e;word-break:break-all}
 .cbar{display:flex;height:14px;border-radius:7px;overflow:hidden;border:1px solid var(--line);margin-top:8px}
 .cbar span{display:block;min-width:4px}
 .ctext{font-size:12px;color:var(--sub);margin-top:5px;line-height:1.6}
@@ -744,7 +748,9 @@ async function renderHome(){
   } else {
     feedHTML=`<div class="card" style="padding:26px 20px;text-align:center;margin-top:14px"><div class="serif" style="font-size:22px;margin-bottom:6px">Welcome</div>
       <p class="note" style="margin:0 0 16px">まずは手持ちの服を写真で登録しましょう。<br>トップスとパンツが揃うと、コーデの提案が始まります。</p>
-      <button class="btn" id="h-first" type="button">${ic('plus')} アイテムを登録する</button></div>`;
+      <button class="btn" id="h-first" type="button">${ic('plus')} アイテムを登録する</button>
+      <div style="height:10px"></div>
+      <button class="btn light" id="h-help" type="button">${ic('help')} はじめての方へ(使い方)</button></div>`;
   }
   v.innerHTML=`
     <div class="brand"><div><b class="serif">My Wardrobe</b><small>Style Your Life</small></div>
@@ -772,6 +778,7 @@ async function renderHome(){
   $('h-add').onclick=()=>openEditor();
   bindSeasonBanner();
   if($('h-first')) $('h-first').onclick=()=>openEditor();
+  if($('h-help')) $('h-help').onclick=showHelp;
   if($('h-more')) $('h-more').onclick=()=>{ heroOutfit=null; renderHome(); window.scrollTo({top:$('v-home').querySelector('.advice, .today').offsetTop,behavior:'smooth'}); };
   v.querySelectorAll('[data-open]').forEach(b=>b.onclick=()=>openDetail(getO(b.dataset.open)));
   v.querySelectorAll('[data-save]').forEach(b=>b.onclick=async()=>{ await toggleSave(getO(b.dataset.save)); renderHome(); });
@@ -1358,12 +1365,8 @@ function renderMypage(){
   if($('mp-reset')) $('mp-reset').onclick=()=>{ if(!confirm('覚えた好みをすべて消しますか？(保存したコーデは消えません)')) return; learn={id:'learn',pairs:{},count:0,ok:0,no:0}; saveLearn(); resetDeck(); renderMypage(); toast('好みをリセットしました'); };
   $('mp-export').onclick=exportData;
   $('mp-import').onclick=()=>$('importFile').click();
-  $('mp-help').onclick=()=>openSheet(`<h3>使い方</h3><p class="note">1. クローゼットの ＋ から、服・靴・バッグを写真で登録します。先にジャンルを選んで「枠に合わせて撮る」を押すと、カメラにその形の点線が出ます。点線に合わせて撮ると、一覧やコーデの絵がきれいにそろいます。<br>
-    2. スタイリストで、気温・行き先・好みに合わせたコーデがカードで出てきます。右へスワイプでOK(保存)、左でNO、上で「今日これを着る」。スワイプするほど好みを覚えて、提案が好みに近づきます。<br>
-    3. 着た日はコーデ詳細の「今日着たコーデに登録」を押すと、カレンダーに記録されます。<br>
-    4. クローゼットの「選択」で、複数の服の季節・テイスト・状態をまとめて変えられます。洗濯中・クリーニング中・しまってある服は、提案に出ません。<br>
-    5. データはこのスマホの中だけに保存されます。ときどき「データを書き出す」で控えを取っておくと安心です。</p><button class="btn" onclick="closeSheet()">閉じる</button>`);
-  $('mp-about').onclick=()=>openSheet(`<h3>My Wardrobe</h3><p class="note">手持ちの服を写真で管理して、コーデを提案するアプリです。<br>コーデの提案は、色の相性・季節・気温・行き先のルールで選んでいます(AIは使っていません)。<br>天気は Open-Meteo の無料データを使っています。</p><button class="btn" onclick="closeSheet()">閉じる</button>`);
+  $('mp-help').onclick=showHelp;
+  $('mp-about').onclick=showAbout;
 }
 function setLoc(loc){ prefs.loc=loc; savePrefs(); weather=null; weatherLoading=null; resetDeck(); heroOutfit=null; closeSheet(); toast(`天気の地域を「${loc.name}」にしました`); loadWeather(); renderMypage(); }
 $('avatarFile').onchange=async e=>{ const f=e.target.files[0]; e.target.value=''; if(!f) return;
@@ -1563,6 +1566,42 @@ function itemColors(i){
 }
 function colorBarHTML(cols){
   return `<div class="cbar">${cols.map(c=>`<span style="flex:${c.p};background:${colorOf(c.id).hex}" title="${colorOf(c.id).name}"></span>`).join('')}</div>`;
+}
+
+// ================= 使い方・アプリについて =================
+const SOURCE_URL='https://github.com/asahi-tottoku/my-wardrobe';
+const isIOS=/iPhone|iPad|iPod/.test(navigator.userAgent);
+const isStandalone=matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;
+function showHelp(){
+  openSheet(`<h3>はじめての方へ</h3>
+    <div class="help-sec"><b>1. ホーム画面に追加して使う</b>
+      <p class="note">${isStandalone?'ホーム画面から開いています。このままお使いください。':(isIOS
+        ?'Safariの下の「共有」ボタン(□に↑)→「ホーム画面に追加」。アプリのようにアイコンから開けます。<br><b>iPhoneでは、追加しないで使うと、しばらく開かなかったときにデータが消されることがあります。</b>'
+        :'Chromeの右上「︙」→「ホーム画面に追加」(または「アプリをインストール」)。アプリのようにアイコンから開けます。')}</p></div>
+    <div class="help-sec"><b>2. 服を登録する</b>
+      <p class="note">クローゼットの ＋ から。先にジャンルを選んで「枠に合わせて撮る」を押すと、カメラにその形の点線が出ます。白い壁や床の前で、点線に合わせて撮るときれいにそろいます。「背景を消す」もできます(初回は準備に1分ほどかかります)。衣替えなどでまとめて登録するときは「保存したら、続けて次を撮る」が便利です。</p></div>
+    <div class="help-sec"><b>3. コーデを選ぶ</b>
+      <p class="note">ホームに今日のおすすめが並びます。スタイリストでは、右へスワイプでOK(保存)、左でNO、上で「今日これを着る」。スワイプするほど好みを覚えます。</p></div>
+    <div class="help-sec"><b>4. 着た日を記録する</b>
+      <p class="note">「今日これを着る」を押すとカレンダーに記録され、着用回数やしばらく着ていない服がわかります。洗濯中・クリーニング中・しまってある服は、服の詳細やクローゼットの「選択」で設定すると、提案に出なくなります。</p></div>
+    <div class="help-sec"><b>5. データの控えを取る</b>
+      <p class="note">服の写真や記録は、<b>このスマホの中だけ</b>に保存されます(ほかの人には見えません)。機種変更や念のために、ときどきマイページの「データを書き出す」で控えのファイルを保存してください。新しいスマホでは「データを読み込む」で戻せます。</p></div>
+    <button class="btn" onclick="closeSheet()">閉じる</button>`);
+}
+function showAbout(){
+  openSheet(`<h3>My Wardrobe</h3>
+    <p class="note">手持ちの服を写真で管理して、コーデを提案するアプリです。コーデの提案は、色の相性・季節・気温・行き先のルールと、スワイプで覚えた好みで選んでいます(AIのサービスには送っていません)。</p>
+    <div class="help-sec"><b>データとプライバシー</b>
+      <p class="note">・服の写真や記録は、この端末のブラウザの中だけに保存され、どこにも送られません。<br>
+      ・天気を調べるときだけ、設定した地域のおおよその位置(緯度・経度)を天気サービスに送ります。<br>
+      ・「背景を消す」は端末の中で処理します。初回だけ、処理に使う部品をダウンロードします。</p></div>
+    <div class="help-sec"><b>使っているもの</b>
+      <p class="note">・天気:<a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a>(CC BY 4.0)<br>
+      ・背景を消す:<a href="https://github.com/imgly/background-removal-js" target="_blank" rel="noopener">@imgly/background-removal</a>(AGPL-3.0)<br>
+      ・文字:Cormorant Garamond(SIL Open Font License)</p></div>
+    <div class="help-sec"><b>アプリの中身</b>
+      <p class="note">このアプリのプログラムは公開しています:<br><a href="${SOURCE_URL}" target="_blank" rel="noopener">${SOURCE_URL}</a></p></div>
+    <button class="btn" onclick="closeSheet()">閉じる</button>`);
 }
 
 // ================= 起動 =================
