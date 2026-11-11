@@ -8,7 +8,10 @@
 <meta name="apple-mobile-web-app-title" content="My Wardrobe">
 <title>My Wardrobe</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;1,500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;1,500&display=swap" rel="stylesheet" crossorigin>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-180.png">
 <style>
 :root{
   --bg:#f7f5f1; --card:#ffffff; --ink:#26241f; --sub:#8a857b; --line:#ebe7df;
@@ -308,6 +311,27 @@ input[type=text]{width:100%;border:1px solid var(--line);border-radius:12px;padd
 .fcap p{margin:4px 0 0;font-size:12px;color:#5f5a51;line-height:1.6}
 .facts{display:flex;flex-direction:column;gap:6px;padding:10px 12px 12px}
 .mini.on svg.i{fill:var(--red);stroke:var(--red)}
+/* ---- お知らせ・自分で組む・まとめ・荷造り ---- */
+.btn:disabled{opacity:.4}
+.notice{display:flex;align-items:center;gap:10px;padding:10px 6px 10px 14px;margin-bottom:14px;font-size:13px;line-height:1.5}
+.notice span{flex:1}
+.notice svg.i{width:18px;height:18px;color:var(--accent)}
+.nt-x{border:0;background:none;color:var(--sub);font-size:14px;padding:8px}
+.build-pic{height:290px;border-radius:16px;overflow:hidden;background:#f3f0ea;position:relative;border:1px solid var(--line)}
+.build-pic .flatlay{aspect-ratio:auto;height:100%}
+.build-pic .ph{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--sub);font-size:13px;text-align:center;line-height:1.8}
+.grid.g4{grid-template-columns:repeat(4,1fr);gap:6px}
+.item.packed img{opacity:.45}
+.stepper{display:flex;align-items:center;gap:12px;font-size:14px}
+.stepper span{flex:1;color:#5f5a51;font-size:13px}
+.stepper b{font-size:20px;min-width:56px;text-align:center}
+.stepper .sbtn{width:40px;height:40px;font-size:20px;box-shadow:none;color:var(--ink)}
+.dayrow{display:flex;align-items:center;gap:10px;width:100%;padding:8px 10px;margin-bottom:8px;text-align:left}
+.dayrow b{font-size:13px;width:44px;flex:none}
+.dayrow span{flex:1;display:flex;gap:5px;min-width:0;overflow:hidden}
+.dayrow img{width:38px;height:48px;object-fit:cover;border-radius:7px;background:var(--tile);flex:none}
+.dayrow svg.i{width:16px;height:16px;color:var(--sub)}
+.menu button small.due{color:var(--red)}
 </style>
 </head>
 <body>
@@ -326,6 +350,12 @@ input[type=text]{width:100%;border:1px solid var(--line);border-radius:12px;padd
 <section class="view hidden" id="v-saved"></section>
 <!-- コーデ詳細 -->
 <section class="view no-nav hidden" id="v-detail"></section>
+<!-- 自分でコーデを組む -->
+<section class="view no-nav hidden" id="v-build"></section>
+<!-- 旅行の荷造り -->
+<section class="view hidden" id="v-pack"></section>
+<!-- 着用のまとめ -->
+<section class="view hidden" id="v-stats"></section>
 
 <!-- 服の登録・編集(入力欄があるので作り直さずに使い回す) -->
 <section class="view no-nav hidden" id="v-add">
@@ -361,6 +391,7 @@ input[type=text]{width:100%;border:1px solid var(--line);border-radius:12px;padd
   <div class="chips wrap" id="e-style"></div>
   <label class="f">状態(「使える」以外は提案に出ません)</label>
   <div class="chips wrap" id="e-status"></div>
+  <div class="chips wrap" id="e-rain"></div>
   <label class="f">メモ(ブランド・買った店など)</label>
   <input type="text" id="e-memo" placeholder="例:ユニクロ、2025年秋">
   <div style="height:22px"></div>
@@ -406,10 +437,11 @@ input[type=text]{width:100%;border:1px solid var(--line);border-radius:12px;padd
 const CATS = [
   {id:'tops',   name:'トップス', subs:['シャツ','Tシャツ','ニット','スウェット・パーカー','ポロシャツ','ブラウス','その他']},
   {id:'bottoms',name:'パンツ',   subs:['スラックス','ジーンズ','チノパン','スカート','ショートパンツ','その他']},
+  {id:'dress',  name:'ワンピース', subs:['ワンピース','シャツワンピ','ニットワンピ','オールインワン','その他']},
   {id:'outer',  name:'アウター', subs:['ジャケット','コート','ダウン','カーディガン','ブルゾン','その他']},
   {id:'shoes',  name:'靴',       subs:['スニーカー','革靴','ブーツ','サンダル','パンプス','その他']},
   {id:'bag',    name:'バッグ',   subs:['トート','リュック','ショルダー','ハンドバッグ','その他']},
-  {id:'other',  name:'小物',     subs:['帽子','マフラー','ベルト','その他']},
+  {id:'other',  name:'小物',     subs:['帽子','マフラー','手袋','ベルト','アクセサリー','その他']},
 ];
 const SEASONS = ['春','夏','秋','冬'];
 const STYLES = ['カジュアル','きれいめ','フォーマル','スポーツ'];
@@ -464,6 +496,9 @@ const ICONS={
   help:'<circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .8-1 1.5v.5M12 17v.3"/>',
   trash:'<path d="M5 7h14M10 7V4.5h4V7M7 7l1 13h8l1-13"/>', x:'<path d="M6 6l12 12M18 6L6 18"/>', undo:'<path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/>',
   sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4"/>', refresh:'<path d="M20 11a8 8 0 1 0-2.3 5.7M20 5v6h-6"/>',
+  edit:'<path d="M4 20l1-4.5L16.5 4 20 7.5 8.5 19z"/><path d="M14 6.5l3.5 3.5"/>',
+  'case':'<rect x="4" y="8" width="16" height="12" rx="2"/><path d="M9 8V5.5h6V8M4 13.5h16"/>',
+  chart:'<path d="M5 20v-8M12 20V5M19 20v-5"/>',
 };
 const ic = (n,extra='') => `<svg class="i" viewBox="0 0 24 24" ${extra}>${ICONS[n]}</svg>`;
 
@@ -518,13 +553,14 @@ function closeSheet(){ $('sheet').classList.add('hidden'); }
 $('sheet').onclick=e=>{ if(e.target.id==='sheet') closeSheet(); };
 
 // コーデの絵:服の写真をきれいに並べる
-const WEIGHT={outer:3,tops:3,bottoms:4,shoes:2,bag:2,other:2};
+const WEIGHT={outer:3,tops:3,dress:5,bottoms:4,shoes:2,bag:2,other:1.5};
 function collage(ids){
   const list=ids.map(byId).filter(Boolean); const by={};
   list.forEach(i=>{ if(!by[i.cat]) by[i.cat]=i; });
   let left, right;
-  if(by.outer){ left=[by.outer,by.tops]; right=[by.bottoms,by.shoes,by.bag]; }
-  else { left=[by.tops,by.shoes]; right=[by.bottoms,by.bag]; }
+  if(by.dress){ left=[by.outer,by.dress]; right=[by.shoes,by.bag,by.other]; }
+  else if(by.outer){ left=[by.outer,by.tops,by.other]; right=[by.bottoms,by.shoes,by.bag]; }
+  else { left=[by.tops,by.shoes,by.other]; right=[by.bottoms,by.bag]; }
   left=left.filter(Boolean); right=right.filter(Boolean);
   if(!left.length&&!right.length) left=list.slice(0,2);
   const col=a=>`<div class="col">${a.map(i=>`<div class="tile" style="flex:${WEIGHT[i.cat]||2}"><img src="${i.photo}" alt="${esc(i.sub||catName(i.cat))}"></div>`).join('')}</div>`;
@@ -533,16 +569,16 @@ function collage(ids){
 
 // ================= 画面の切り替え =================
 const NAV_VIEWS=['home','closet','stylist','calendar','mypage'];
-const ALL_VIEWS=[...NAV_VIEWS,'saved','detail','add'];
+const ALL_VIEWS=[...NAV_VIEWS,'saved','detail','add','build','pack','stats'];
 let stack=['home'];
 function render(v){
-  ({home:renderHome,closet:renderCloset,stylist:renderStylist,calendar:renderCalendar,mypage:renderMypage,saved:renderSaved,detail:renderDetail,add:renderEditor})[v]();
+  ({home:renderHome,closet:renderCloset,stylist:renderStylist,calendar:renderCalendar,mypage:renderMypage,saved:renderSaved,detail:renderDetail,add:renderEditor,build:renderBuild,pack:renderPack,stats:renderStats})[v]();
 }
 function go(v,{push=true}={}){
   if(v!=='closet'&&selMode){ selMode=false; selIds=new Set(); }
   if(NAV_VIEWS.includes(v)) stack=[v]; else if(push) stack.push(v);
   ALL_VIEWS.forEach(x=>$('v-'+x).classList.toggle('hidden',x!==v));
-  $('tabs').classList.toggle('hidden',v==='detail'||v==='add');
+  $('tabs').classList.toggle('hidden',v==='detail'||v==='add'||v==='build');
   const navOn = NAV_VIEWS.includes(v)?v:stack[0];
   document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('on',b.dataset.v===navOn));
   render(v); window.scrollTo(0,0);
@@ -552,14 +588,16 @@ document.querySelectorAll('#tabs button').forEach(b=>b.onclick=()=>go(b.dataset.
 document.addEventListener('click',e=>{ if(e.target.closest('[data-back]')) back(); });
 
 // ================= 天気 =================
-let weather=null, weatherLoading=null;
+let weather=null, weatherLoading=null, weatherFailed=false;
+const isRainCode=c=>(c>=51&&c<=67)||(c>=80&&c<=82)||c>=95;
+const rainToday=()=>!!weather&&isRainCode(weather.code);
 const WX=c=> c===0?['☀️','晴れ']: c<=2?['🌤️','晴れ時々曇り']: c===3?['☁️','曇り']: c<=48?['🌫️','霧']: c<=67?['🌧️','雨']: c<=77?['❄️','雪']: c<=82?['🌦️','にわか雨']: ['⛈️','雷雨'];
 function loadWeather(){
   if(weatherLoading) return weatherLoading;
   const {lat,lon}=prefs.loc;
   weatherLoading=fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=temperature_2m_max,temperature_2m_min,weather_code&timezone=auto&forecast_days=1`)
     .then(r=>r.json()).then(j=>{ const d=j.daily; weather={max:Math.round(d.temperature_2m_max[0]),min:Math.round(d.temperature_2m_min[0]),code:d.weather_code[0]}; return weather; })
-    .catch(()=>{ weather=null; return null; });
+    .catch(()=>{ weather=null; weatherFailed=true; return null; });
   return weatherLoading;
 }
 
@@ -567,11 +605,22 @@ function loadWeather(){
 // ctx: {season, style('all'|テイスト), dest, temp(最高気温 or null), fixed(必ず入れる服)}
 // 組み合わせをたくさん作り、ルールの点数+スワイプで覚えた好みの点数で並べる
 function generateCandidates(ctx){
-  const inSeason=cat=>items.filter(i=>i.cat===cat&&i.seasons.includes(ctx.season)&&!isRest(i));
-  const fixed=ctx.fixed;
-  const tops=inSeason('tops'), bottoms=inSeason('bottoms');
-  if((!tops.length&&fixed?.cat!=='tops')||(!bottoms.length&&fixed?.cat!=='bottoms')) return {error:'need', tops:tops.length, bottoms:bottoms.length};
-  const outer=inSeason('outer'), shoes=inSeason('shoes'), bag=inSeason('bag');
+  let pool=items.filter(i=>i.seasons.includes(ctx.season)&&!isRest(i));
+  if(ctx.rain){
+    // 雨の日は「雨に弱い」服を外す(外すと組めなくなるときは、外さない)
+    const can=l=>(l.some(i=>i.cat==='tops')&&l.some(i=>i.cat==='bottoms'))||l.some(i=>i.cat==='dress');
+    const dry=pool.filter(i=>!i.rainWeak);
+    if(can(dry)||!can(pool)) pool=dry;
+  }
+  const inSeason=cat=>pool.filter(i=>i.cat===cat);
+  const fixed=ctx.fixed, fc=fixed?.cat;
+  const tops=inSeason('tops'), bottoms=inSeason('bottoms'), dress=inSeason('dress');
+  // 上下で組むか、ワンピース1枚で組むか
+  const sepOK=(tops.length||fc==='tops')&&(bottoms.length||fc==='bottoms')&&fc!=='dress';
+  const drOK=(dress.length||fc==='dress')&&fc!=='tops'&&fc!=='bottoms';
+  if(!sepOK&&!drOK) return {error:'need', tops:tops.length, bottoms:bottoms.length};
+  const pDress=!sepOK?1:!drOK?0:fc==='dress'?1:Math.min(0.4,dress.length/(dress.length+Math.max(tops.length,bottoms.length)));
+  const outer=inSeason('outer'), shoes=inSeason('shoes'), bag=inSeason('bag'), other=inSeason('other');
   const t=ctx.temp;
   const wantOuter = t!=null ? t<20 : (ctx.season==='秋'||ctx.season==='冬');
   const dest=DESTS[ctx.dest]||DESTS['おまかせ'];
@@ -581,11 +630,12 @@ function generateCandidates(ctx){
   const cands=[], seen=new Set();
   for(let k=0;k<600;k++){
     const o={};
-    o.tops = fixed?.cat==='tops'?fixed:pick(tops);
-    o.bottoms = fixed?.cat==='bottoms'?fixed:pick(bottoms);
-    if(fixed?.cat==='outer') o.outer=fixed; else if(wantOuter&&outer.length) o.outer=pick(outer);
-    if(fixed?.cat==='shoes') o.shoes=fixed; else if(shoes.length) o.shoes=pick(shoes);
-    if(fixed?.cat==='bag') o.bag=fixed; else if(bag.length) o.bag=pick(bag);
+    if(Math.random()<pDress) o.dress = fc==='dress'?fixed:pick(dress);
+    else { o.tops = fc==='tops'?fixed:pick(tops); o.bottoms = fc==='bottoms'?fixed:pick(bottoms); }
+    if(fc==='outer') o.outer=fixed; else if(wantOuter&&outer.length) o.outer=pick(outer);
+    if(fc==='shoes') o.shoes=fixed; else if(shoes.length) o.shoes=pick(shoes);
+    if(fc==='bag') o.bag=fixed; else if(bag.length) o.bag=pick(bag);
+    if(fc==='other') o.other=fixed; else if(other.length&&Math.random()<0.4) o.other=pick(other);
     const list=Object.values(o); const key=list.map(i=>i.id).sort().join(',');
     if(seen.has(key)) continue; seen.add(key);
     let s=colorScore(list)+styleScore(list)+learnScore(list);
@@ -602,6 +652,7 @@ function generateCandidates(ctx){
       const heavy=['コート','ダウン'].includes(o.outer.sub);
       if(t<10) s+= heavy?3:-1; else if(t<17) s+= heavy?-0.5:1.5; else s+= heavy?-3:1;
     }
+    if(o.other&&t!=null&&['マフラー','手袋'].includes(o.other.sub)) s+= t<12?1.5 : t>=18?-4 : 0;
     cands.push({ids:list.map(i=>i.id),key,score:s+Math.random()*1.6});
   }
   cands.sort((a,b)=>b.score-a.score);
@@ -675,7 +726,7 @@ function describe(ids,ctx={}){
   else if(cnt('きれいめ')) title='落ち着いたきれいめスタイル';
   else if(cnt('スポーツ')) title='動きやすいアクティブスタイル';
   else title='肩の力を抜いた休日カジュアル';
-  const main=[by.outer,by.tops,by.bottoms].filter(Boolean).map(i=>i.sub||catName(i.cat));
+  const main=[by.outer,by.tops,by.dress,by.bottoms].filter(Boolean).map(i=>i.sub||catName(i.cat));
   const acc=[...new Set(list.map(i=>i.color).filter(c=>!colorOf(c).neutral))].map(c=>colorOf(c).name);
   const base=[...new Set(list.map(i=>i.color).filter(c=>colorOf(c).neutral))].map(c=>colorOf(c).name);
   let colorTxt = acc.length===0 ? `${base.slice(0,2).join('と')}の落ち着いた色でまとめた着こなし`
@@ -694,12 +745,15 @@ const savedOf=o=>outfits.find(x=>sameIds(x.ids,o.ids));
 // ================= ホーム(今日の天気とおすすめを縦に並べる) =================
 let heroOutfit=null, homeFeed=[];
 // 平置き風のコーデの絵:服を机に並べたように配置する(位置は枠に対する%)
-const FL_OUT={tops:[2,2,46,40],bottoms:[6,41,38,55],outer:[50,4,48,50],shoes:[50,76,26,21],bag:[76,58,22,36]};
+const FL_OUT={tops:[2,2,46,40],bottoms:[6,41,38,55],outer:[50,4,48,50],shoes:[50,76,26,21],bag:[76,58,22,36],other:[52,56,22,18]};
 const FL_NO ={tops:[3,3,46,42],bottoms:[8,44,36,53],bag:[52,10,44,42],shoes:[54,62,40,30]};
+const FL_DR_OUT={dress:[2,4,46,92],outer:[50,4,48,50],shoes:[50,76,26,21],bag:[76,58,22,36],other:[52,56,22,18]};
+const FL_DR ={dress:[3,4,48,92],bag:[54,10,42,42],shoes:[54,62,40,30]};
 function flatlay(ids){
   const list=ids.map(byId).filter(Boolean), by={};
   list.forEach(i=>{ if(!by[i.cat]) by[i.cat]=i; });
-  const L=by.outer?FL_OUT:FL_NO;
+  let L=by.dress?(by.outer?FL_DR_OUT:FL_DR):(by.outer?FL_OUT:FL_NO);
+  if(by.other&&!by.outer) L={...L,shoes:[52,64,28,30],other:[81,60,17,24]};   // 小物は靴の横に小さく
   return `<div class="flatlay">${Object.entries(L).filter(([c])=>by[c]).map(([c,[l,t,w,h]])=>
     `<img src="${by[c].photo}" alt="${esc(by[c].sub||catName(c))}" style="left:${l}%;top:${t}%;width:${w}%;height:${h}%">`).join('')}</div>`;
 }
@@ -713,7 +767,7 @@ function weatherAdvice(){
   else if(t<27) a='半袖でも過ごしやすい陽気';
   else a='とても暑い日。風通しのいい服で';
   if(weather.max-weather.min>=10) a+='。朝晩は冷えるので、脱ぎ着しやすい服を';
-  if((c>=51&&c<=67)||(c>=80&&c<=82)||c>=95) a+='。雨なので、濡れても平気な靴がおすすめ';
+  if(isRainCode(c)) a+='。雨なので、濡れても平気な靴がおすすめ'+(items.some(i=>i.rainWeak)?'(雨に弱い服は外しました)':'');
   else if(c>=71&&c<=77) a+='。雪の予報なので足もとに注意';
   return a+'！';
 }
@@ -729,7 +783,7 @@ async function renderHome(){
   const v=$('v-home');
   const todayW=wears.find(w=>w.date===todayKey());
   if(!heroOutfit||!homeFeed.every(o=>o.ids.every(byId))){
-    const r=suggestOutfits({season:currentSeason(),style:'all',dest:'おまかせ',temp:weather?.max??null},5);
+    const r=suggestOutfits({season:currentSeason(),style:'all',dest:'おまかせ',temp:weather?.max??null,rain:rainToday()},5);
     homeFeed=r.outfits||[]; heroOutfit=homeFeed[0]||{ids:[]};
   }
   const todayO=todayW?{...describe(todayW.ids,{}),...pickFields(todayW)}:null;
@@ -755,28 +809,28 @@ async function renderHome(){
   v.innerHTML=`
     <div class="brand"><div><b class="serif">My Wardrobe</b><small>Style Your Life</small></div>
       <button class="icon-btn" id="h-add" aria-label="アイテムを登録">${ic('plus')}</button></div>
-    ${seasonBanner()}
+    ${noticeHTML()}
     <div class="today">
       <div class="td-date"><b>${now.getDate()}</b><span>${now.getMonth()+1}月・${WD[now.getDay()]}曜日</span></div>
       <div class="td-wx"><div class="td-loc">${esc(prefs.loc.name)}</div>
-        ${wx?`<span class="e">${wx[0]}</span><span class="t"><small>最高</small>${weather.max}°</span><span class="t"><small>最低</small>${weather.min}°</span>`:'<small class="note">天気を読み込み中…</small>'}</div>
+        ${wx?`<span class="e">${wx[0]}</span><span class="t"><small>最高</small>${weather.max}°</span><span class="t"><small>最低</small>${weather.min}°</span>`:`<small class="note">${weatherFailed?'天気は取得できません(オフライン)':'天気を読み込み中…'}</small>`}</div>
     </div>
     ${advice?`<div class="advice">${advice}</div>`:''}
     ${todayO?`<div class="sec-head"><h2>今日のコーディネート</h2></div>${feedCard(todayO,'today',true)}`:''}
     ${feedHTML}
-    <div class="sec-head"><h2>クイックメニュー</h2></div>
+    <div class="sec-head"><h2>メニュー</h2></div>
     <div class="quick">
-      <button data-go="closet">${ic('hanger')}クローゼット</button>
-      <button data-go="saved">${ic('shirt')}コーディネート</button>
-      <button data-go="stylist">${ic('sparkle')}スタイリスト</button>
-      <button data-go="calendar">${ic('calendar')}カレンダー</button>
+      <button data-go="saved">${ic('heart')}保存コーデ</button>
+      <button data-go="build">${ic('edit')}自分で組む</button>
+      <button data-go="pack">${ic('case')}荷造り</button>
+      <button data-go="stats">${ic('chart')}まとめ</button>
     </div>
     ${recent.length?`<div class="sec-head"><h2>最近のコーディネート</h2><button data-go="saved" type="button">すべて見る ${ic('chev')}</button></div>
       <div class="hscroll" id="h-recent">${recent.map((o,i)=>`<button class="thumb-outfit" data-i="${i}">${collage(o.ids)}${o.date?`<span class="d">${o.date.slice(5).replace('-','/')}</span>`:''}</button>`).join('')}</div>`:''}
   `;
   v.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>go(b.dataset.go));
   $('h-add').onclick=()=>openEditor();
-  bindSeasonBanner();
+  bindNotice();
   if($('h-first')) $('h-first').onclick=()=>openEditor();
   if($('h-help')) $('h-help').onclick=showHelp;
   if($('h-more')) $('h-more').onclick=()=>{ heroOutfit=null; renderHome(); window.scrollTo({top:$('v-home').querySelector('.advice, .today').offsetTop,behavior:'smooth'}); };
@@ -788,7 +842,7 @@ async function renderHome(){
     await load(); toast('今日のコーデとしてカレンダーに記録しました'); renderHome(); window.scrollTo({top:0,behavior:'smooth'});
   });
   v.querySelectorAll('#h-recent button').forEach(b=>b.onclick=()=>openDetail(recent[+b.dataset.i]));
-  if(!weather&&!weatherLoading) loadWeather().then(w=>{ if(w&&stack[stack.length-1]==='home'){ heroOutfit=null; renderHome(); } });
+  if(!weather&&!weatherLoading) loadWeather().then(w=>{ if(stack[stack.length-1]==='home'){ if(w) heroOutfit=null; renderHome(); } });
 }
 function pickFields(w){ return w.title?{title:w.title,note:w.note,tags:w.tags}:{}; }
 
@@ -838,7 +892,7 @@ function openItem(i){
   openSheet(`<img class="big" src="${i.photo}" alt="">
     <div class="kv"><span>${catName(i.cat)}${i.sub?' / '+esc(i.sub):''}</span><span>${i.seasons.join('・')}</span>
       <span><i style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${c.hex};border:1px solid #aaa;margin-right:4px;vertical-align:-1px"></i>${c.name}</span>
-      <span>${i.style}</span>${i.pattern?'<span>柄・多色</span>':''}<span>着た回数 ${n}回</span></div>
+      <span>${i.style}</span>${i.pattern?'<span>柄・多色</span>':''}${i.rainWeak?'<span>☔ 雨の日は避ける</span>':''}<span>着た回数 ${n}回</span></div>
     ${i.colors&&i.colors.length>1?colorBarHTML(i.colors)+`<div class="ctext" style="margin-bottom:10px">${i.colors.map(c=>`${colorOf(c.id).name} ${Math.round(c.p*100)}%`).join('・')}</div>`:''}
     ${i.memo?`<p class="note">${esc(i.memo)}</p>`:''}
     <div class="note" style="margin:0 0 4px">状態</div><div class="chips wrap" id="sh-st"></div>
@@ -852,7 +906,7 @@ function openItem(i){
 let draft=null;
 function openEditor(item){
   draft = item ? {...item,seasons:[...item.seasons],existing:true}
-               : {id:null,photo:null,cat:fCat!=='all'&&fCat!=='fav'?fCat:'tops',sub:'',seasons:[currentSeason()],color:'gray',style:'カジュアル',memo:'',fav:false,existing:false};
+               : {id:null,photo:null,cat:CATS.some(c=>c.id===fCat)?fCat:'tops',sub:'',seasons:[currentSeason()],color:'gray',style:'カジュアル',memo:'',fav:false,existing:false};
   go('add');
 }
 function renderEditor(){
@@ -880,6 +934,7 @@ function renderEditor(){
   $('btn-del').classList.toggle('hidden',!draft.existing);
   $('btn-save').textContent=draft.existing?'変更を保存':'保存する';
   chips($('e-status'),STATUSES,draft.status||'active',id=>{draft.status=id;renderEditor()});
+  chips($('e-rain'),[{id:'r',name:'☔ 雨の日は提案しない'}],draft.rainWeak?'r':null,()=>{draft.rainWeak=!draft.rainWeak;renderEditor()});
   $('burst-wrap').classList.toggle('hidden',!!draft.existing);
   $('burst').checked=!!prefs.burst;
 }
@@ -916,6 +971,7 @@ const GUIDES={
   outer:  {d:'M100 42 L134 30 Q150 52 166 30 L200 42 L256 92 L264 300 L232 306 L218 152 L220 376 L80 376 L82 152 L68 306 L36 300 L44 92 Z', tip:'ハンガーに掛けて正面から、または広げて真上から'},
   bottoms:{d:'M102 34 L198 34 L214 372 L162 372 L150 122 L138 372 L86 372 Z', tip:'たたまずに縦にまっすぐ置いて、真上から'},
   shoes:  {d:'M36 262 L36 206 Q60 194 92 198 L142 170 Q162 164 172 186 L204 212 Q254 216 266 242 L266 264 Q150 274 36 262 Z', tip:'片方を真横から。かかとを左、つま先を右に'},
+  dress:  {d:'M112 40 L134 34 Q150 54 166 34 L188 40 L214 84 L190 100 L182 150 L232 372 L68 372 L118 150 L110 100 L86 84 Z', tip:'ハンガーに掛けて正面から、または広げて真上から。裾まで枠に入れて'},
   bag:    {d:'M58 156 H242 V346 H58 Z M112 156 Q112 84 150 84 Q188 84 188 156', tip:'正面から。持ち手も枠に入れて'},
   other:  {d:'M70 90 H230 Q250 90 250 110 V290 Q250 310 230 310 H70 Q50 310 50 290 V110 Q50 90 70 90 Z', tip:'無地の背景の上に置いて、真上から'},
 };
@@ -1056,7 +1112,7 @@ $('crop-ok').onclick=()=>{
 $('btn-save').onclick=async()=>{
   if(!draft.photo){ toast('先に写真を撮ってください'); return; }
   if(!draft.seasons.length){ toast('季節を1つ以上選んでください'); return; }
-  const rec={id:draft.id||uid(),photo:draft.photo,cat:draft.cat,sub:draft.sub,seasons:draft.seasons,color:draft.color,style:draft.style,memo:draft.memo||'',fav:!!draft.fav,status:draft.status||'active',colors:(draft.colors&&draft.colors.length)?draft.colors:[{id:draft.color,p:1}],pattern:!!draft.pattern,created:draft.created||Date.now()};
+  const rec={id:draft.id||uid(),photo:draft.photo,cat:draft.cat,sub:draft.sub,seasons:draft.seasons,color:draft.color,style:draft.style,memo:draft.memo||'',fav:!!draft.fav,status:draft.status||'active',colors:(draft.colors&&draft.colors.length)?draft.colors:[{id:draft.color,p:1}],pattern:!!draft.pattern,rainWeak:!!draft.rainWeak,created:draft.created||Date.now()};
   try{ await put('items',rec); }catch(e){ toast('保存できませんでした(容量不足かもしれません)'); return; }
   const wasEdit=draft.existing; await load(); heroOutfit=null; resetDeck();
   if(wasEdit){ toast('変更を保存しました'); draft=null; back(); }
@@ -1079,7 +1135,7 @@ let sCtx={season:currentSeason(),seasonAuto:true,style:'all',dest:'おまかせ'
 let deck=null, deckSeen=new Set(), swipeHist=[], flying=false;
 function resetDeck(){ deck=null; deckSeen=new Set(); swipeHist=[]; }
 function buildDeck(){
-  const ctx={...sCtx,temp:weather?.max??null};
+  const ctx={...sCtx,temp:weather?.max??null,rain:rainToday()};
   const r=generateCandidates(ctx);
   if(r.error){ deck={error:true,tops:r.tops,bottoms:r.bottoms}; return; }
   const pool=r.cands.filter(c=>!deckSeen.has(c.key));
@@ -1140,7 +1196,7 @@ function renderStylist(){
   $('st-dest').onclick=()=>pickSheet('行き先',Object.keys(DESTS).map(k=>({id:k,name:DESTS[k].e+' '+k})),sCtx.dest,id=>{sCtx.dest=id;reroll()});
   $('st-style').onclick=()=>pickSheet('好み',[{id:'all',name:'おまかせ'},...STYLES.map(s=>({id:s,name:s}))],sCtx.style,id=>{sCtx.style=id;reroll()});
   $('st-info').onclick=()=>openSheet(`<h3>提案のしくみ</h3><p class="note">登録したアイテムの中から、季節に合うものをたくさん組み合わせて点数を付け、点数の高い順にカードで出しています。</p>
-    <p class="note">・色:黒・白・紺・ベージュなどのベーシックな色に、差し色を1つまでが高得点<br>・気温:20℃未満なら上着を入れ、10℃未満ならコートやダウンを優先<br>・行き先:仕事なら革靴やシャツ、ゴルフならポロシャツやスニーカーを優先<br>・ここ3日に着た服は少し控えめに<br>・<b>スワイプで覚えた好み</b>:OKした組み合わせ(服どうし・色どうし・テイストどうし)は点が上がり、NOは少し下がります。古い判断ほど効き目が弱まります<br>・5枚に1枚は「いつもと違う提案」を混ぜています</p>
+    <p class="note">・色:黒・白・紺・ベージュなどのベーシックな色に、差し色を1つまでが高得点<br>・気温:20℃未満なら上着を入れ、10℃未満ならコートやダウンを優先<br>・行き先:仕事なら革靴やシャツ、ゴルフならポロシャツやスニーカーを優先<br>・雨の日:「雨の日は提案しない」にした服を外します<br>・ここ3日に着た服は少し控えめに<br>・<b>スワイプで覚えた好み</b>:OKした組み合わせ(服どうし・色どうし・テイストどうし)は点が上がり、NOは少し下がります。古い判断ほど効き目が弱まります<br>・5枚に1枚は「いつもと違う提案」を混ぜています</p>
     <p class="note">判定した回数:${learn.count}回(OK ${learn.ok} / NO ${learn.no})</p><button class="btn" onclick="closeSheet()">閉じる</button>`);
   if($('st-unfix')) $('st-unfix').onclick=()=>{ sCtx.fixed=null; reroll(); };
   if($('st-add')) $('st-add').onclick=()=>openEditor();
@@ -1236,7 +1292,7 @@ async function toggleSave(o,onlySave=false){
 
 // ================= コーデ詳細 =================
 let detailOutfit=null;
-const ORDER=['outer','tops','bottoms','shoes','bag','other'];
+const ORDER=['outer','tops','dress','bottoms','shoes','bag','other'];
 function openDetail(o){ detailOutfit=o; go('detail'); }
 function renderDetail(){
   const o=detailOutfit, v=$('v-detail');
@@ -1263,9 +1319,10 @@ function renderDetail(){
 // ================= 保存したコーデ一覧 =================
 function renderSaved(){
   const v=$('v-saved');
-  v.innerHTML=`<div class="top center"><button class="icon-btn" data-back aria-label="戻る">${ic('back')}</button><h1>保存したコーディネート</h1><span style="width:34px"></span></div>
+  v.innerHTML=`<div class="top center"><button class="icon-btn" data-back aria-label="戻る">${ic('back')}</button><h1>保存したコーディネート</h1><button class="icon-btn" id="sv-new" aria-label="自分でコーデを組む">${ic('plus')}</button></div>
     ${outfits.length?`<div class="grid" style="grid-template-columns:repeat(2,1fr);gap:10px" id="sv">${outfits.map((o,i)=>`<button class="thumb-outfit" style="width:auto;height:210px" data-i="${i}">${collage(o.ids)}</button>`).join('')}</div>`
-      :`<div class="empty">保存したコーデはまだありません。<br>スタイリストの提案から保存できます。<div style="height:14px"></div><button class="btn" id="sv-go">${ic('sparkle')} 提案を見る</button></div>`}`;
+      :`<div class="empty">保存したコーデはまだありません。<br>スタイリストの提案から保存するか、<br>右上の ＋ から自分で組めます。<div style="height:14px"></div><button class="btn" id="sv-go">${ic('sparkle')} 提案を見る</button></div>`}`;
+  $('sv-new').onclick=()=>{ bld=null; go('build'); };
   v.querySelectorAll('#sv button').forEach(b=>b.onclick=()=>openDetail(outfits[+b.dataset.i]));
   if($('sv-go')) $('sv-go').onclick=()=>go('stylist');
 }
@@ -1313,14 +1370,8 @@ function renderMypage(){
   const v=$('v-mypage'), now=new Date();
   const monthKey=`${now.getFullYear()}-${pad(now.getMonth()+1)}`;
   const monthWears=wears.filter(w=>w.date.startsWith(monthKey)).length;
-  // 過去13週の着用回数
-  const weeks=[]; const today=new Date(); today.setHours(0,0,0,0);
-  for(let i=12;i>=0;i--){ const end=new Date(today); end.setDate(end.getDate()-i*7); const st=new Date(end); st.setDate(st.getDate()-6);
-    const n=wears.filter(w=>{ const [y,m,d]=w.date.split('-').map(Number); const t=new Date(y,m-1,d); return t>=st&&t<=end; }).length; weeks.push({n,st}); }
-  const max=Math.max(1,...weeks.map(w=>w.n));
-  const labels=[...new Set(weeks.map(w=>w.st.getMonth()+1))].slice(-3);
   const name=prefs.name||'ゲスト';
-  const likes=learnedPairs(1), dislikes=learnedPairs(-1), rare=rareItems();
+  const likes=learnedPairs(1), dislikes=learnedPairs(-1), due=backupDue();
   const pairHTML=p=>`<div class="pair">${p.ids.map(id=>`<img src="${byId(id).photo}" alt="">`).join('<span>×</span>')}</div>`;
   v.innerHTML=`<div class="top center"><span style="width:34px"></span><h1>マイページ</h1><span style="width:34px"></span></div>
     <div class="card profile"><button class="avatar" id="mp-av" aria-label="写真を変える">${prefs.avatar?`<img src="${prefs.avatar}" alt="">`:esc(name.slice(0,1))}</button>
@@ -1329,29 +1380,24 @@ function renderMypage(){
     <div class="card stats"><div>${ic('hanger')}<small>登録アイテム</small><b>${items.length}<em>点</em></b></div>
       <div>${ic('calendar')}<small>今月の着用</small><b>${monthWears}<em>回</em></b></div>
       <div>${ic('bookmark')}<small>保存コーデ</small><b>${outfits.length}<em>件</em></b></div></div>
-    <div class="card chart"><div class="h">着用履歴グラフ<small>過去3ヶ月(週ごと)</small></div>
-      <div class="bars">${weeks.map((w,i)=>`<div class="${i===12?'now':''}" style="height:${w.n/max*100}%" title="${w.n}回"></div>`).join('')}</div>
-      <div class="blabels">${labels.map(m=>`<span>${m}月</span>`).join('')}</div></div>
     <div class="card chart"><div class="h">覚えた好み<small>判定 ${learn.count}回</small></div>
       ${likes.length?`<div class="note" style="margin:0 0 6px">よく選ぶ組み合わせ</div><div class="pairs">${likes.map(pairHTML).join('')}</div>`
         :`<p class="note" style="margin:0">スタイリストでカードを左右にスワイプすると、好みの組み合わせを覚えてここに表示します。</p>`}
       ${dislikes.length?`<div class="note" style="margin:12px 0 6px">あまり選ばない組み合わせ</div><div class="pairs">${dislikes.map(pairHTML).join('')}</div>`:''}
       ${learn.count?`<div style="margin-top:12px;text-align:right"><button class="mini" id="mp-reset">好みをリセット</button></div>`:''}
     </div>
-    <div class="card chart"><div class="h">しばらく着ていない服<small>${RARE_DAYS}日以上</small></div>
-      ${rare.length?`<div class="rare">${rare.slice(0,12).map(r=>`<button class="rare-i" data-id="${r.item.id}" type="button"><img src="${r.item.photo}" alt=""><span>${r.never?'未着用 ':''}${r.days}日</span></button>`).join('')}</div>
-        <p class="note" style="margin:8px 0 0">${rare.length}点。スタイリストの提案に、ときどき混ぜて出します。ずっと着ないものは、手放す候補にも。</p>`
-        :`<p class="note" style="margin:0">${RARE_DAYS}日以上着ていない服はありません。</p>`}
-    </div>
     <div class="card menu">
+      <button id="mp-stats">${ic('chart')}<span>着用のまとめ</span>${ic('chev')}</button>
+      <button id="mp-pack">${ic('case')}<span>旅行の荷造り</span>${ic('chev')}</button>
       <button id="mp-loc">${ic('pin')}<span>天気の地域</span><small>${esc(prefs.loc.name)}</small>${ic('chev')}</button>
-      <button id="mp-export">${ic('out')}<span>データを書き出す(控え)</span>${ic('chev')}</button>
+      <button id="mp-export">${ic('out')}<span>データを書き出す(控え)</span><small class="${due?'due':''}">${prefs.lastExport?(d=>`${d.getMonth()+1}/${d.getDate()}`)(new Date(prefs.lastExport)):'まだ'}</small>${ic('chev')}</button>
       <button id="mp-import">${ic('inn')}<span>データを読み込む</span>${ic('chev')}</button>
       <button id="mp-help">${ic('help')}<span>ヘルプ・使い方</span>${ic('chev')}</button>
       <button id="mp-about">${ic('info')}<span>アプリについて</span>${ic('chev')}</button>
     </div>`;
   $('mp-av').onclick=()=>$('avatarFile').click();
-  v.querySelectorAll('.rare-i').forEach(b=>b.onclick=()=>openItem(byId(b.dataset.id)));
+  $('mp-stats').onclick=()=>go('stats');
+  $('mp-pack').onclick=()=>go('pack');
   $('mp-edit').onclick=()=>{ const n=prompt('表示する名前',prefs.name||''); if(n===null) return; const b=prompt('ひとこと',prefs.bio||''); prefs.name=n.trim(); if(b!==null) prefs.bio=b.trim(); savePrefs(); renderMypage(); };
   $('mp-loc').onclick=()=>{
     openSheet(`<h3>天気の地域</h3><p class="note" style="margin-top:0">今の地域:${esc(prefs.loc.name)}。スタイリストが、この地域の今日の気温を見て服を選びます。</p>
@@ -1363,15 +1409,16 @@ function renderMypage(){
     };
   };
   if($('mp-reset')) $('mp-reset').onclick=()=>{ if(!confirm('覚えた好みをすべて消しますか？(保存したコーデは消えません)')) return; learn={id:'learn',pairs:{},count:0,ok:0,no:0}; saveLearn(); resetDeck(); renderMypage(); toast('好みをリセットしました'); };
-  $('mp-export').onclick=exportData;
+  $('mp-export').onclick=()=>{ exportData(); renderMypage(); };
   $('mp-import').onclick=()=>$('importFile').click();
   $('mp-help').onclick=showHelp;
   $('mp-about').onclick=showAbout;
 }
-function setLoc(loc){ prefs.loc=loc; savePrefs(); weather=null; weatherLoading=null; resetDeck(); heroOutfit=null; closeSheet(); toast(`天気の地域を「${loc.name}」にしました`); loadWeather(); renderMypage(); }
+function setLoc(loc){ prefs.loc=loc; savePrefs(); weather=null; weatherLoading=null; weatherFailed=false; resetDeck(); heroOutfit=null; closeSheet(); toast(`天気の地域を「${loc.name}」にしました`); loadWeather(); renderMypage(); }
 $('avatarFile').onchange=async e=>{ const f=e.target.files[0]; e.target.value=''; if(!f) return;
   try{ const {dataUrl}=await processImage(f,240); prefs.avatar=dataUrl; savePrefs(); renderMypage(); }catch(err){ toast('写真を読み込めませんでした'); } };
 function exportData(){
+  prefs.lastExport=Date.now(); prefs.backupSnooze=0; savePrefs();
   const blob=new Blob([JSON.stringify({app:'closet',version:3,items,outfits,wears,prefs,learn})],{type:'application/json'});
   const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`my-wardrobe-${todayKey()}.json`; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),2000);
 }
@@ -1568,6 +1615,194 @@ function colorBarHTML(cols){
   return `<div class="cbar">${cols.map(c=>`<span style="flex:${c.p};background:${colorOf(c.id).hex}" title="${colorOf(c.id).name}"></span>`).join('')}</div>`;
 }
 
+// ================= お知らせ(ホームに出すのは1件だけ) =================
+// 控えを30日取っていなければ控えのお知らせ、そうでなければ衣替えのお知らせ
+function backupDue(){
+  if(items.length<3) return null;
+  const base=prefs.lastExport||Math.min(...items.map(i=>i.created||Date.now()));
+  const days=Math.floor((Date.now()-base)/864e5);
+  if(days<30) return null;
+  return {days,never:!prefs.lastExport};
+}
+function noticeHTML(){
+  const b=backupDue();
+  if(b&&!(prefs.backupSnooze&&Date.now()<prefs.backupSnooze))
+    return `<div class="card notice">${ic('out')}<span>${b.never?'まだ控えを取っていません。':`最後の控えから${b.days}日たちました。`}</span>
+      <button class="mini" id="nt-exp" type="button">書き出す</button><button class="nt-x" id="nt-x" type="button" aria-label="あとで">✕</button></div>`;
+  return seasonBanner();
+}
+function bindNotice(){
+  if($('nt-exp')){
+    $('nt-exp').onclick=()=>{ exportData(); renderHome(); };
+    $('nt-x').onclick=()=>{ prefs.backupSnooze=Date.now()+7*864e5; savePrefs(); renderHome(); };
+  } else bindSeasonBanner();
+}
+
+// ================= 自分でコーデを組む =================
+let bld=null;
+function renderBuild(){
+  const v=$('v-build');
+  if(!bld) bld={sel:{},cat:'tops'};
+  v.innerHTML=`<div class="top center"><button class="icon-btn" data-back aria-label="戻る">${ic('back')}</button><h1>コーデを組む</h1><span style="width:34px"></span></div>
+    <div class="build-pic" id="b-pic"></div>
+    <div class="chips wrap" id="b-cat" style="margin-top:12px"></div>
+    <div class="grid g4" id="b-grid"></div><div class="empty hidden" id="b-empty"></div>
+    <div class="bar"><button class="btn" id="b-save" type="button">${ic('check')} このコーデを保存</button></div>`;
+  $('b-save').onclick=saveBuild;
+  drawBuild();
+}
+const buildIds=()=>ORDER.map(c=>bld.sel[c]).filter(id=>id&&byId(id));
+function drawBuild(){
+  const ids=buildIds();
+  $('b-pic').innerHTML=ids.length?flatlay(ids):'<div class="ph">下から服をタップすると、<br>ここに並びます</div>';
+  chips($('b-cat'),CATS.map(c=>({id:c.id,name:(bld.sel[c.id]?'✓ ':'')+c.name})),bld.cat,id=>{ bld.cat=id; drawBuild(); });
+  const list=items.filter(i=>i.cat===bld.cat);
+  const g=$('b-grid'); g.innerHTML='';
+  $('b-empty').classList.toggle('hidden',list.length>0);
+  $('b-empty').textContent=`${catName(bld.cat)}は、まだ登録されていません。`;
+  list.forEach(i=>{
+    const on=bld.sel[i.cat]===i.id;
+    const b=document.createElement('button'); b.type='button'; b.className='item'+(on?' sel':'')+(isRest(i)?' rest':'');
+    b.innerHTML=`<img src="${i.photo}" alt="${esc(i.sub||catName(i.cat))}">${on?`<span class="check">${ic('check')}</span>`:''}`;
+    b.onclick=()=>{
+      if(on) delete bld.sel[i.cat];
+      else { bld.sel[i.cat]=i.id;
+        // ワンピースと、トップス・パンツは、どちらか一方
+        if(i.cat==='dress'){ delete bld.sel.tops; delete bld.sel.bottoms; } else if(i.cat==='tops'||i.cat==='bottoms') delete bld.sel.dress; }
+      drawBuild();
+    };
+    g.appendChild(b);
+  });
+  $('b-save').disabled=ids.length<2;
+}
+async function saveBuild(){
+  const ids=buildIds(); if(ids.length<2) return;
+  const o=describe(ids,{});
+  let s=savedOf(o);
+  if(s) toast('同じコーデが保存済みです');
+  else {
+    s={id:uid(),ids:[...ids],title:o.title,note:o.note,tags:o.tags,season:o.season,created:Date.now()};
+    await put('outfits',s);
+    applyLearn(ids.map(byId),1); saveLearn();   // 自分で組んだコーデは「好き」として覚える
+    await load(); toast('コーデを保存しました');
+  }
+  bld=null; stack.pop(); openDetail(s);
+}
+
+// ================= 着用のまとめ =================
+function renderStats(){
+  const v=$('v-stats');
+  const head=`<div class="top center"><button class="icon-btn" data-back aria-label="戻る">${ic('back')}</button><h1>着用のまとめ</h1><span style="width:34px"></span></div>`;
+  if(!items.length){ v.innerHTML=head+`<div class="empty">服を登録して、着た日を記録すると、<br>ここにまとめが出ます。</div>`; return; }
+  // 過去13週の着用回数
+  const weeks=[]; const today=new Date(); today.setHours(0,0,0,0);
+  for(let i=12;i>=0;i--){ const end=new Date(today); end.setDate(end.getDate()-i*7); const st=new Date(end); st.setDate(st.getDate()-6);
+    const n=wears.filter(w=>{ const [y,m,d]=w.date.split('-').map(Number); const t=new Date(y,m-1,d); return t>=st&&t<=end; }).length; weeks.push({n,st}); }
+  const max=Math.max(1,...weeks.map(w=>w.n));
+  const labels=[...new Set(weeks.map(w=>w.st.getMonth()+1))].slice(-3);
+  const top=items.map(i=>({i,n:wearCount(i.id)})).filter(x=>x.n>0).sort((a,b)=>b.n-a.n).slice(0,12);
+  const rare=rareItems(), year=rare.filter(r=>r.days>=365).length;
+  const cc={}; items.forEach(i=>{ cc[i.color]=(cc[i.color]||0)+1; });
+  const cols=Object.entries(cc).map(([id,n])=>({id,p:n/items.length})).sort((a,b)=>b.p-a.p);
+  const neutral=cols.filter(c=>colorOf(c.id).neutral).reduce((a,c)=>a+c.p,0);
+  const colorNote = neutral>=0.9 ? 'ベーシックな色が中心です。差し色の服を1つ足すと、組み合わせの幅が広がります。'
+    : cols[0].p>=0.4 ? `${colorOf(cols[0].id).name}が多めです。次に買うなら、ほかの色を選ぶと着回しやすくなります。`
+    : neutral<0.5 ? '色物が多めです。白・紺・ベージュなどのベーシックな色を足すと、合わせやすくなります。'
+    : '色のバランスがよく取れています。';
+  const thumb=(i,txt)=>`<button class="rare-i" data-id="${i.id}" type="button"><img src="${i.photo}" alt=""><span>${txt}</span></button>`;
+  v.innerHTML=head+`
+    <div class="card chart" style="margin-top:0"><div class="h">着た回数<small>過去3ヶ月(週ごと)</small></div>
+      <div class="bars">${weeks.map((w,i)=>`<div class="${i===12?'now':''}" style="height:${w.n/max*100}%" title="${w.n}回"></div>`).join('')}</div>
+      <div class="blabels">${labels.map(m=>`<span>${m}月</span>`).join('')}</div></div>
+    <div class="card chart"><div class="h">よく着る服<small>回数の多い順</small></div>
+      ${top.length?`<div class="rare">${top.map(x=>thumb(x.i,x.n+'回')).join('')}</div>`
+        :`<p class="note" style="margin:0">「今日これを着る」で記録すると、よく着る服がここに並びます。</p>`}</div>
+    <div class="card chart"><div class="h">しばらく着ていない服<small>${RARE_DAYS}日以上</small></div>
+      ${rare.length?`<div class="rare">${rare.slice(0,12).map(r=>thumb(r.item,(r.never?'未着用 ':'')+r.days+'日')).join('')}</div>
+        <p class="note" style="margin:8px 0 0">${rare.length}点${year?`(うち1年以上が${year}点)`:''}。提案にときどき混ぜて出します。ずっと着ないものは、手放す候補にも。</p>`
+        :`<p class="note" style="margin:0">${RARE_DAYS}日以上着ていない服はありません。</p>`}</div>
+    <div class="card chart"><div class="h">色のバランス<small>全${items.length}点</small></div>
+      ${colorBarHTML(cols)}<div class="ctext">${cols.slice(0,5).map(c=>`${colorOf(c.id).name} ${Math.round(c.p*100)}%`).join('・')}</div>
+      <p class="note" style="margin:8px 0 0">${colorNote}</p></div>
+    <div class="card chart"><div class="h">ジャンルの内訳</div>
+      <div class="kv" style="margin:0">${CATS.map(c=>({c,n:items.filter(i=>i.cat===c.id).length})).filter(x=>x.n).map(x=>`<span>${x.c.name} ${x.n}点</span>`).join('')}</div></div>`;
+  v.querySelectorAll('.rare-i').forEach(b=>b.onclick=()=>openItem(byId(b.dataset.id)));
+}
+
+// ================= 旅行の荷造り =================
+const BANDS=[
+  {id:'cold',name:'寒い 〜10℃',t:6,seasons:['冬']},
+  {id:'cool',name:'すずしい 10〜17℃',t:14,seasons:['秋','春']},
+  {id:'mild',name:'快適 17〜24℃',t:21,seasons:['春','秋']},
+  {id:'hot', name:'暑い 24℃〜',t:29,seasons:['夏']},
+];
+let pack=null;
+function bandOf(t){ return t<10?'cold':t<17?'cool':t<24?'mild':'hot'; }
+function makePlan(){
+  const b=BANDS.find(x=>x.id===pack.band), n=pack.days;
+  const pool=items.filter(i=>i.seasons.some(s=>b.seasons.includes(s))&&!['laundry','cleaning'].includes(i.status));
+  const of=c=>pool.filter(i=>i.cat===c);
+  const tops=of('tops'),bottoms=of('bottoms'),dress=of('dress'),outer=of('outer'),shoes=of('shoes'),bag=of('bag');
+  const upper=[...(bottoms.length?tops:[]),...dress];
+  if(!upper.length) return {error:true};
+  const nUp=Math.min(upper.length,Math.max(1,Math.ceil(n*0.7)));
+  const nBot=Math.min(bottoms.length,n<=2?1:n<=5?2:3);
+  const dest=DESTS['旅行'];
+  const sample=(a,k)=>{ a=[...a]; const out=[]; while(out.length<k&&a.length) out.push(a.splice(Math.floor(Math.random()*a.length),1)[0]); return out; };
+  const pick=a=>a[Math.floor(Math.random()*a.length)];
+  let best=null;
+  for(let k=0;k<300;k++){
+    const up=sample(upper,nUp), B=sample(bottoms,nBot);
+    const O=b.t<20&&outer.length?pick(outer):null, S=shoes.length?pick(shoes):null, G=bag.length?pick(bag):null;
+    const days=[], seen=new Set(); let s=0;
+    for(let d=0;d<n;d++){
+      const u=up[d%up.length], list=[u];
+      if(u.cat==='tops') list.push(B[(d+Math.floor(d/up.length))%B.length]);
+      if(O) list.push(O); if(S) list.push(S); if(G) list.push(G);
+      s+=colorScore(list)+styleScore(list)+learnScore(list);
+      for(const i of list){
+        if(dest.styles.includes(i.style)) s+=1;
+        if((dest.like[i.cat]||[]).includes(i.sub)) s+=2;
+        if((dest.avoid[i.cat]||[]).includes(i.sub)) s-=3;
+        if((dest.avoid.styles||[]).includes(i.style)) s-=2.5;
+      }
+      const key=list.map(i=>i.id).sort().join(); if(seen.has(key)) s-=3; seen.add(key);
+      days.push(list.map(i=>i.id));
+    }
+    if(O){ const heavy=['コート','ダウン'].includes(O.sub); s+=n*(b.t<10?(heavy?3:-1):(heavy?-0.5:1.5)); }
+    s=s/n+Math.random()*0.8;
+    if(!best||s>best.s) best={s,days};
+  }
+  const packIds=[...new Set(best.days.flat())].sort((x,y)=>ORDER.indexOf(byId(x).cat)-ORDER.indexOf(byId(y).cat));
+  return {days:best.days,packIds};
+}
+function renderPack(){
+  const v=$('v-pack');
+  if(!pack) pack={days:3,band:bandOf(weather?weather.max:({春:19,夏:29,秋:19,冬:7})[currentSeason()]),plan:null,done:new Set()};
+  const p=pack.plan;
+  let body='';
+  if(p&&p.error) body=`<div class="card empty" style="margin-top:14px">この気温に合うトップスとパンツ(またはワンピース)が登録されていません。</div>`;
+  else if(p) body=`
+    <div class="sec-head"><h2>持っていくもの<small style="font-weight:400;color:var(--sub);font-size:12px;margin-left:6px">${p.packIds.length}点・タップで詰めた印</small></h2></div>
+    <div class="grid g4" id="pk-items">${p.packIds.map(id=>{ const i=byId(id), on=pack.done.has(id);
+      return `<button class="item${on?' packed':''}" data-id="${id}" type="button"><img src="${i.photo}" alt="${esc(i.sub||catName(i.cat))}">${on?`<span class="check" style="background:var(--dark)">${ic('check')}</span>`:''}</button>`; }).join('')}</div>
+    <div class="sec-head"><h2>着回し</h2></div>
+    ${p.days.map((ids,d)=>`<button class="card dayrow" data-d="${d}" type="button"><b>${d+1}日目</b><span>${ids.map(id=>`<img src="${byId(id).photo}" alt="">`).join('')}</span>${ic('chev')}</button>`).join('')}`;
+  v.innerHTML=`<div class="top center"><button class="icon-btn" data-back aria-label="戻る">${ic('back')}</button><h1>旅行の荷造り</h1><span style="width:34px"></span></div>
+    <div class="card" style="padding:14px">
+      <div class="stepper"><span>日数</span><button class="sbtn small" id="pk-minus" type="button" aria-label="減らす">−</button><b>${pack.days}日</b><button class="sbtn small" id="pk-plus" type="button" aria-label="増やす">＋</button></div>
+      <div class="note" style="margin:12px 0 6px">行き先の気温</div>
+      <div class="chips wrap" id="pk-band" style="padding-bottom:12px"></div>
+      <button class="btn" id="pk-go" type="button">${ic(p?'refresh':'case')} ${p?'別の案を出す':'少ない服で着回す案を出す'}</button>
+    </div>${body}`;
+  chips($('pk-band'),BANDS,pack.band,id=>{ pack.band=id; pack.plan=null; renderPack(); });
+  $('pk-minus').onclick=()=>{ if(pack.days>1){ pack.days--; pack.plan=null; renderPack(); } };
+  $('pk-plus').onclick=()=>{ if(pack.days<14){ pack.days++; pack.plan=null; renderPack(); } };
+  $('pk-go').onclick=()=>{ pack.plan=makePlan(); pack.done=new Set(); renderPack(); };
+  v.querySelectorAll('#pk-items .item').forEach(b=>b.onclick=()=>{ const id=b.dataset.id; pack.done.has(id)?pack.done.delete(id):pack.done.add(id); const y=window.scrollY; renderPack(); window.scrollTo(0,y); });
+  v.querySelectorAll('.dayrow').forEach(b=>b.onclick=()=>openDetail(describe(p.days[+b.dataset.d],{dest:'旅行'})));
+}
+
 // ================= 使い方・アプリについて =================
 const SOURCE_URL='https://github.com/asahi-tottoku/my-wardrobe';
 const isIOS=/iPhone|iPad|iPod/.test(navigator.userAgent);
@@ -1581,11 +1816,11 @@ function showHelp(){
     <div class="help-sec"><b>2. 服を登録する</b>
       <p class="note">クローゼットの ＋ から。先にジャンルを選んで「枠に合わせて撮る」を押すと、カメラにその形の点線が出ます。白い壁や床の前で、点線に合わせて撮るときれいにそろいます。「背景を消す」もできます(初回は準備に1分ほどかかります)。衣替えなどでまとめて登録するときは「保存したら、続けて次を撮る」が便利です。</p></div>
     <div class="help-sec"><b>3. コーデを選ぶ</b>
-      <p class="note">ホームに今日のおすすめが並びます。スタイリストでは、右へスワイプでOK(保存)、左でNO、上で「今日これを着る」。スワイプするほど好みを覚えます。</p></div>
+      <p class="note">ホームに今日のおすすめが並びます。スタイリストでは、右へスワイプでOK(保存)、左でNO、上で「今日これを着る」。スワイプするほど好みを覚えます。ホームの「自分で組む」では、服を自分で選んで保存できます。雨の日は、「雨の日は提案しない」にした服を外して提案します。</p></div>
     <div class="help-sec"><b>4. 着た日を記録する</b>
-      <p class="note">「今日これを着る」を押すとカレンダーに記録され、着用回数やしばらく着ていない服がわかります。洗濯中・クリーニング中・しまってある服は、服の詳細やクローゼットの「選択」で設定すると、提案に出なくなります。</p></div>
+      <p class="note">「今日これを着る」を押すとカレンダーに記録され、ホームの「まとめ」で、よく着る服・しばらく着ていない服・色の偏りがわかります。「荷造り」では、旅行の日数と気温から、少ない服で着回す案を出します。洗濯中・クリーニング中・しまってある服は、服の詳細やクローゼットの「選択」で設定すると、提案に出なくなります。</p></div>
     <div class="help-sec"><b>5. データの控えを取る</b>
-      <p class="note">服の写真や記録は、<b>このスマホの中だけ</b>に保存されます(ほかの人には見えません)。機種変更や念のために、ときどきマイページの「データを書き出す」で控えのファイルを保存してください。新しいスマホでは「データを読み込む」で戻せます。</p></div>
+      <p class="note">服の写真や記録は、<b>このスマホの中だけ</b>に保存されます(ほかの人には見えません)。機種変更や念のために、ときどきマイページの「データを書き出す」で控えのファイルを保存してください。新しいスマホでは「データを読み込む」で戻せます。30日取っていないと、ホームでお知らせします。<br>一度開いたあとは、電波のない場所でも使えます(天気と、初回の「背景を消す」を除く)。</p></div>
     <button class="btn" onclick="closeSheet()">閉じる</button>`);
 }
 function showAbout(){
@@ -1605,7 +1840,11 @@ function showAbout(){
 }
 
 // ================= 起動 =================
-openDB().then(load).then(()=>{ go('home'); }).catch(()=>{
+// オフラインでも開けるように、アプリ本体を端末に保存する
+if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
+// 電波が戻ったら天気を取り直す
+window.addEventListener('online',()=>{ if(!weather){ weatherLoading=null; weatherFailed=false; if(stack[stack.length-1]==='home') renderHome(); } });
+openDB().then(load).then(()=>{ go('home'); if(items.length) navigator.storage?.persist?.().catch(()=>{}); }).catch(()=>{
   document.body.innerHTML='<div class="empty" style="padding-top:120px">このブラウザではデータを保存できません。<br>プライベートモードを解除してお試しください。</div>';
 });
 </script>
